@@ -6,6 +6,9 @@ XFATLIB_OUT     := libxfat.so
 
 all: $(XFATLIB_OBJS)
 	gcc $(XFATLIB_LDFLAGS) $< -o $(XFATLIB_OUT)
-	
+
+utils: all
+	make -C utils
+
 xfat.o: xfat.c
 	$(XFATLIB_CC) $(XFATLIB_CFLAGS) -c $<
