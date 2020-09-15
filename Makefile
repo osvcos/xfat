@@ -12,3 +12,8 @@ utils: all
 
 xfat.o: xfat.c
 	$(XFATLIB_CC) $(XFATLIB_CFLAGS) -c $<
+
+clean:
+	@rm -rf *.o
+	@rm -rf $(XFATLIB_OUT)
+	@make -C utils clean
