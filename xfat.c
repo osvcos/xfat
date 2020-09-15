@@ -74,6 +74,11 @@ s32 get_next_fat(u32 fat_index, fat_entry *fe)
 	return 0;
 }
 
+u32 get_root_cluster()
+{
+	return root_cluster;
+}
+
 s32 set_label(const char* label)
 {
 	fat_entry fe;
