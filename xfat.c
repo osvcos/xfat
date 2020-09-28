@@ -110,6 +110,21 @@ s32 set_label(const char* label)
 	return 0;
 }
 
+s32 write_to_bootsector(u32 offset, void* data, u32 size)
+{
+    u32 main_bootloader_offset = 0;
+    u32 bk_bootloader_offset   = backup_boot_sector_cluster * bytes_per_sector;
+    s32 retval = 0;
+    
+    if(pwrite(fd, data, size, main_bootloader_offset + offset) == -1)
+        retval = -1;
+    
+    if(pwrite(fd, data, size, bk_bootloader_offset + offset) ==  -1)
+        retval = -1;
+    
+    return retval;
+}
+
 void close_device()
 {
 	close(fd);
