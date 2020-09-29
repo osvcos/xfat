@@ -88,14 +88,8 @@ s32 set_label(const char* label)
 	
 	u32 label_offset = sizeof(CBPB) + offsetof(FAT32BPB, volume_label);
 	
-	if(pwrite(fd, label, 11, label_offset) == -1)
-		return -1;
-	
-	u32 backup_label_offset = (backup_boot_sector_cluster * bytes_per_sector) \
-		+ sizeof(CBPB) + offsetof(FAT32BPB, volume_label);
-	
-	if(pwrite(fd, label, 11, backup_label_offset) == -1)
-		return -1;
+	if(write_to_bootsector(label_offset, label, 11) == -1)
+        return -1;
 	
 	if(get_next_fat(root_cluster, &fe) == -1)
 		return -1;
@@ -110,7 +104,7 @@ s32 set_label(const char* label)
 	return 0;
 }
 
-s32 write_to_bootsector(u32 offset, void* data, u32 size)
+s32 write_to_bootsector(u32 offset, const void* data, u32 size)
 {
     u32 main_bootloader_offset = 0;
     u32 bk_bootloader_offset   = backup_boot_sector_cluster * bytes_per_sector;
