@@ -5,7 +5,7 @@
 
 typedef struct {
 	u32 current_entry;
-	u32 data_offset;
+	u64 data_offset;
 	u32 next_entry;
 } fat_entry;
 

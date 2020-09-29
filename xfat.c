@@ -5,15 +5,16 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "directory.h"
 #include "reserved.h"
 #include "xfat.h"
 
 static s32 fd;
 
 static u32 reserved_sectors;
-static u32 fat_region_offset;
+static u64 fat_region_offset;
 static u32 bytes_per_sector;
-static u32 data_region_offset;
+static u64 data_region_offset;
 static u32 cluster_size;
 static u32 root_cluster;
 static u32 backup_boot_sector_cluster;
@@ -82,25 +83,36 @@ u32 get_root_cluster()
 s32 set_label(const char* label)
 {
 	fat_entry fe;
+    u32 label_offset = 0;
+    Directory dir;
 	
+    memset(&dir, 0, sizeof(Directory));
+    
 	if(strlen(label) < 11)
 		return -1;
 	
-	u32 label_offset = sizeof(CBPB) + offsetof(FAT32BPB, volume_label);
+    if(get_next_fat(root_cluster, &fe) == -1)
+        return -1;
+    
+    if(pread(fd, &dir, sizeof(Directory), fe.data_offset) == -1)
+        return -1;
+    
+    memcpy(dir.name, label, 11);
+    dir.attributes = ATTR_VOLUME_ID;
+    dir.creation_time = 0xFFFF;
+    dir.creation_date = 0xFFFF;
+    dir.last_access_date = 0xFFFF;
+    dir.last_mod_date = 0xFFFF;
+    dir.last_mod_time = 0xFFFF;
+    
+	label_offset = sizeof(CBPB) + offsetof(FAT32BPB, volume_label);
 	
 	if(write_to_bootsector(label_offset, label, 11) == -1)
         return -1;
 	
-	if(get_next_fat(root_cluster, &fe) == -1)
-		return -1;
-	
-	if(pwrite(fd, label, 11, fe.data_offset) == -1)
-		return -1;
-	
-	u8 attrs = 0x08;
-	if(pwrite(fd, &attrs, sizeof(u8), fe.data_offset + 11) == -1)
-		return -1;
-	
+    if(pwrite(fd, &dir, sizeof(Directory), fe.data_offset) == -1)
+        return -1;
+    
 	return 0;
 }
 
