@@ -24,7 +24,7 @@ s32 open_device(const char* dev)
 	CBPB* cbpb = NULL;
 	FAT32BPB *f32bpb = NULL;
 	
-	fd = open(dev, O_RDWR);
+	fd = open(dev, O_RDWR | O_SYNC | O_RSYNC);
 	
 	if(fd < 0)
 		return -1;
