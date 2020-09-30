@@ -1,16 +1,21 @@
 CC      := gcc
 CCFLAGS := -I../
 LDFLAGS := -L../ -lxfat
+FATLABEL_OBJECTS := fatlabel.o
+TESTS := fatlabel
 
-all: fatlabel
-	make -C ../.
+all: xfat $(TESTS)
+.PHONY: all
 
-fatlabel: fatlabel.o
-	$(CC) $(LDFLAGS) fatlabel.o -o fatlabel
+xfat:
+	@make -C ../
 
-fatlabel.o: fatlabel.c
-	$(CC) $(CCFLAGS) -c fatlabel.c
+fatlabel: $(FATLABEL_OBJECTS)
+	$(CC) $(LDFLAGS) $< -o $@
+
+%.o: %.c
+	$(CC) $(CCFLAGS) -c $<
 
 clean:
 	@rm -rf *.o
-	@rm -rf fatlabel
+	@rm -rf $(TESTS)

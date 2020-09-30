@@ -10,7 +10,7 @@ all: $(XFATLIB_OBJS)
 utils: all
 	make -C utils
 
-xfat.o: xfat.c
+%.o: %.c
 	$(XFATLIB_CC) $(XFATLIB_CFLAGS) -c $<
 
 clean:
