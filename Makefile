@@ -1,11 +1,11 @@
 XFATLIB_CC      := gcc
 XFATLIB_CFLAGS  := -O3
 XFATLIB_LDFLAGS := -shared
-XFATLIB_OBJS    := xfat.o
+XFATLIB_OBJS    := xfat.o datetime.o
 XFATLIB_OUT     := libxfat.so
 
 all: $(XFATLIB_OBJS)
-	gcc $(XFATLIB_LDFLAGS) $< -o $(XFATLIB_OUT)
+	gcc $(XFATLIB_LDFLAGS) $(XFATLIB_OBJS) -o $(XFATLIB_OUT)
 
 utils: all
 	make -C utils

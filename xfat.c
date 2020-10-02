@@ -5,6 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "datetime.h"
 #include "directory.h"
 #include "reserved.h"
 #include "xfat.h"
@@ -85,6 +86,7 @@ s32 set_label(const char* label)
 	fat_entry fe;
     u32 label_offset = 0;
     Directory dir;
+    struct fat_datetime dt;
 	
     memset(&dir, 0, sizeof(Directory));
     
@@ -97,13 +99,21 @@ s32 set_label(const char* label)
     if(pread(fd, &dir, sizeof(Directory), fe.data_offset) == -1)
         return -1;
     
+    if(fat_getdatetime(&dt) == -1)
+        return -1;
+    
     memcpy(dir.name, label, 11);
-    dir.attributes = ATTR_VOLUME_ID;
-    dir.creation_time = 0xFFFF;
-    dir.creation_date = 0xFFFF;
-    dir.last_access_date = 0xFFFF;
-    dir.last_mod_date = 0xFFFF;
-    dir.last_mod_time = 0xFFFF;
+    
+    if(dir.attributes != ATTR_VOLUME_ID)
+    {
+        dir.attributes = ATTR_VOLUME_ID;
+        dir.creation_time = fat_gettime(&dt);
+        dir.creation_date = fat_getdate(&dt);
+    }
+    
+    dir.last_access_date = fat_getdate(&dt);
+    dir.last_mod_date    = fat_getdate(&dt);
+    dir.last_mod_time = fat_gettime(&dt);
     
 	label_offset = sizeof(CBPB) + offsetof(FAT32BPB, volume_label);
 	
