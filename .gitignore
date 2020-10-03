@@ -1,0 +1,6 @@
+*.o
+*.so
+
+utils/*.o
+utils/fatlabel
+utils/lsroot
