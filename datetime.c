@@ -37,9 +37,9 @@ u16 fat_gettime(struct fat_datetime *dt)
 
 u16 fat_getdate(struct fat_datetime *dt)
 {
-    u16 time = 0;
-    time |= (dt->day << 12);
-    time |= (dt->month << 8);
-    time |= (dt->year);
-    return time;
+    u16 date = 0;
+    date |= (dt->day << 12);
+    date |= (dt->month << 8);
+    date |= (dt->year);
+    return date;
 }
