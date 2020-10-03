@@ -10,7 +10,7 @@ s32 fat_getdatetime(struct fat_datetime *dt)
     if(time(&rawtime) == -1)
         return -1;
     
-    dts = gmtime(&rawtime);
+    dts = localtime(&rawtime);
     
     dt->seconds   = ((dts->tm_sec + 1) / 2) - 1;
     dt->minutes   = dts->tm_min;
