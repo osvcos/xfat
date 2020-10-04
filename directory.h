@@ -10,6 +10,12 @@
 #define ATTR_DIRECTORY 0x10
 #define ATTR_ARCHIVE   0x20
 
+/* Attribute only applied to LFN entries */
+#define ATTR_LONG_NAME (ATTR_READ_ONLY | \
+    ATTR_HIDDEN | \
+    ATTR_SYSTEM | \
+    ATTR_VOLUME_ID)
+
 typedef struct __attribute__((packed)) {
 	u8  name[11];
 	u8  attributes;

@@ -81,6 +81,42 @@ u32 get_root_cluster()
 	return root_cluster;
 }
 
+s32 read_cluster(u64 start_of_cluster, u32 offset, void *data, u32 size)
+{
+    printf("start_of_cluster=%lu, offset=%u, size=%u\n", start_of_cluster, offset, size);
+    
+    u64 end_of_cluster = (start_of_cluster + cluster_size);
+    u64 cluster_offset = start_of_cluster + offset;
+    
+    printf("end_of_cluster=%lu\n", end_of_cluster);
+    
+    /* Check if the starting cluster offset
+     * is aligned to the cluster size
+     */
+    if((end_of_cluster % cluster_size) != 0)
+    {
+        printf("read_cluster: Start of cluster is not aligned\n");
+        return -1;
+    }
+    
+    /*
+     * Ensure that this operation does not pass
+     * the cluster boundary
+     */
+    if((start_of_cluster + offset + size) >= end_of_cluster)
+    {
+        printf("read_cluster: reached end of cluster\n");
+        return -1;
+    }
+    
+    /* Read and store the data in the data parameter.
+     */
+    if(pread(fd, data, size, cluster_offset) == -1)
+        return -1;
+    
+    return 0;
+}
+
 s32 set_label(const char* label)
 {
 	fat_entry fe;
