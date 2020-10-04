@@ -5,7 +5,7 @@ XFATLIB_OBJS    := xfat.o datetime.o
 XFATLIB_OUT     := libxfat.so
 
 all: $(XFATLIB_OBJS)
-	gcc $(XFATLIB_LDFLAGS) $(XFATLIB_OBJS) -o $(XFATLIB_OUT)
+	$(XFATLIB_CC) $(XFATLIB_LDFLAGS) $(XFATLIB_OBJS) -o $(XFATLIB_OUT)
 
 utils: all
 	make -C utils
