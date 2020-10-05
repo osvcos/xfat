@@ -7,7 +7,7 @@
 
 int main(int argc, char *argv[])
 {
-    u32 root_cluster;
+    u32 root_cluster = 0;
     fat_entry fe;
     u32 item_count = 0;
     u32 offset = sizeof(Directory);
@@ -92,6 +92,7 @@ int main(int argc, char *argv[])
         item_count += 1;
     }
     
+    close_device();
     printf("Total items: %u\n", item_count);
     
     return 0;
