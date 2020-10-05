@@ -12,7 +12,6 @@
 
 static s32 fd;
 
-static u32 reserved_sectors;
 static u64 fat_region_offset;
 static u32 bytes_per_sector;
 static u64 data_region_offset;
@@ -40,9 +39,11 @@ s32 open_device(const char* dev)
 		return -1;
 	
 	bytes_per_sector = cbpb->bytes_per_sector;
-	reserved_sectors = cbpb->reserved_sectors * bytes_per_sector;
-	fat_region_offset = reserved_sectors;
-	data_region_offset = reserved_sectors + ((f32bpb->fat_size_32 * bytes_per_sector) * cbpb->fat_count);
+	fat_region_offset = cbpb->reserved_sectors * bytes_per_sector;
+
+	data_region_offset = (cbpb->reserved_sectors * bytes_per_sector)
+        + ((f32bpb->fat_size_32 * bytes_per_sector) * cbpb->fat_count);
+
 	cluster_size = bytes_per_sector * cbpb->sectors_per_cluster;
 	root_cluster = f32bpb->root_cluster;
 	backup_boot_sector_cluster = f32bpb->boot_sector_copy;
