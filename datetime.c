@@ -4,24 +4,25 @@
 
 s32 fat_getdatetime(struct fat_datetime *dt)
 {
-    struct tm *dts = NULL;
+    struct tm dts;
     time_t rawtime;
     
     if(time(&rawtime) == -1)
         return -1;
     
-    dts = localtime(&rawtime);
+    if(localtime_r(&rawtime, &dts) == NULL)
+        return -1;
     
-    dt->seconds   = ((dts->tm_sec + 1) / 2) - 1;
-    dt->minutes   = dts->tm_min;
-    dt->hours     = dts->tm_hour;
+    dt->seconds   = ((dts.tm_sec + 1) / 2) - 1;
+    dt->minutes   = dts.tm_min;
+    dt->hours     = dts.tm_hour;
     
     while(dt->seconds > 29)
         --dt->seconds;
     
-    dt->day   = dts->tm_mday;
-    dt->month = dts->tm_mon + 1;
-    dt->year  = dts->tm_year + 80;
+    dt->day   = dts.tm_mday;
+    dt->month = dts.tm_mon + 1;
+    dt->year  = dts.tm_year + 80;
     
     return 0;
 }
