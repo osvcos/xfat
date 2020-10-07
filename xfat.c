@@ -23,6 +23,7 @@ s32 open_device(const char* dev)
 {
 	CBPB* cbpb = NULL;
 	FAT32BPB *f32bpb = NULL;
+    u16 fat_in_use = 0;
 	
 	fd = open(dev, O_RDWR | O_SYNC | O_RSYNC);
 	
@@ -38,8 +39,13 @@ s32 open_device(const char* dev)
 	if(pread(fd, f32bpb, sizeof(FAT32BPB), sizeof(CBPB)) == -1)
 		return -1;
 	
+    if(f32bpb->ext_flags & 0x0080)
+        fat_in_use = (f32bpb->ext_flags & 0x000F);
+
 	bytes_per_sector = cbpb->bytes_per_sector;
-	fat_region_offset = cbpb->reserved_sectors * bytes_per_sector;
+
+	fat_region_offset = (cbpb->reserved_sectors * bytes_per_sector)
+        + (fat_in_use * f32bpb->fat_size_32 * bytes_per_sector * cbpb->fat_count);
 
 	data_region_offset = (cbpb->reserved_sectors * bytes_per_sector)
         + ((f32bpb->fat_size_32 * bytes_per_sector) * cbpb->fat_count);
