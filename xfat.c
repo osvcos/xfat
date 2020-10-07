@@ -21,51 +21,48 @@ static u32 backup_boot_sector_cluster;
 
 s32 open_device(const char* dev)
 {
-	CBPB* cbpb = NULL;
-	FAT32BPB *f32bpb = NULL;
+    CBPB common_bpb;
+    FAT32BPB fat32_bpb;
     u16 fat_in_use = 0;
-	
-	fd = open(dev, O_RDWR | O_SYNC | O_RSYNC);
-	
-	if(fd < 0)
+
+    memset(&common_bpb, 0, sizeof(CBPB));
+    memset(&fat32_bpb, 0, sizeof(FAT32BPB));
+
+    fd = open(dev, O_RDWR | O_SYNC | O_RSYNC);
+
+    if(fd < 0)
+        return -1;
+
+    if(pread(fd, &common_bpb, sizeof(CBPB), 0) == -1)
 		return -1;
-	
-	cbpb = malloc(sizeof(CBPB));
-	f32bpb = malloc(sizeof(FAT32BPB));
-	
-	if(pread(fd, cbpb, sizeof(CBPB), 0) == -1)
-		return -1;
-	
-	if(pread(fd, f32bpb, sizeof(FAT32BPB), sizeof(CBPB)) == -1)
-		return -1;
-	
-    if(f32bpb->ext_flags & 0x0080)
-        fat_in_use = (f32bpb->ext_flags & 0x000F);
 
-	bytes_per_sector = cbpb->bytes_per_sector;
+    if(pread(fd, &fat32_bpb, sizeof(FAT32BPB), sizeof(CBPB)) == -1)
+        return -1;
 
-	fat_region_offset = (cbpb->reserved_sectors * bytes_per_sector)
-        + (fat_in_use * f32bpb->fat_size_32 * bytes_per_sector * cbpb->fat_count);
+    if(fat32_bpb.ext_flags & 0x0080)
+        fat_in_use = (fat32_bpb.ext_flags & 0x000F);
 
-	data_region_offset = (cbpb->reserved_sectors * bytes_per_sector)
-        + ((f32bpb->fat_size_32 * bytes_per_sector) * cbpb->fat_count);
+	bytes_per_sector = common_bpb.bytes_per_sector;
 
-	cluster_size = bytes_per_sector * cbpb->sectors_per_cluster;
-	root_cluster = f32bpb->root_cluster;
-	backup_boot_sector_cluster = f32bpb->boot_sector_copy;
-	
-	free(cbpb);
-	free(f32bpb);
-	
+	fat_region_offset = (common_bpb.reserved_sectors * bytes_per_sector)
+        + (fat_in_use * fat32_bpb.fat_size_32 * bytes_per_sector * common_bpb.fat_count);
+
+	data_region_offset = (common_bpb.reserved_sectors * bytes_per_sector)
+        + ((fat32_bpb.fat_size_32 * bytes_per_sector) * common_bpb.fat_count);
+
+	cluster_size = bytes_per_sector * common_bpb.sectors_per_cluster;
+	root_cluster = fat32_bpb.root_cluster;
+	backup_boot_sector_cluster = fat32_bpb.boot_sector_copy;
+
 	return 0;
 }
 
 s32 get_next_fat(u32 fat_index, fat_entry *fe)
 {
+    u32 next_fat = 0;
+    u32 current_fat = fat_region_offset + (4 * fat_index);
+
 	fe->current_entry = fat_index;
-	
-	u32 next_fat;
-	u32 current_fat = fat_region_offset + (4 * fat_index);
 	
 	if(pread(fd, &next_fat, sizeof(u32), current_fat) == -1)
 		return -1;
@@ -79,7 +76,7 @@ s32 get_next_fat(u32 fat_index, fat_entry *fe)
 		u32 offset = data_region_offset + (cluster_size * (fat_index - 2));
 		fe->data_offset = offset;
 	}
-	
+
 	return 0;
 }
 
@@ -126,12 +123,14 @@ s32 read_cluster(u64 start_of_cluster, u32 offset, void *data, u32 size)
 
 s32 set_label(const char* label)
 {
-	fat_entry fe;
+    fat_entry fe;
     u32 label_offset = 0;
     Directory dir;
     struct fat_datetime dt;
 	
     memset(&dir, 0, sizeof(Directory));
+    memset(&fe, 0, sizeof(fat_entry));
+    memset(&dt, 0, sizeof(struct fat_datetime));
     
 	if(strlen(label) < 11)
 		return -1;
