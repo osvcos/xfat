@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <fcntl.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -18,6 +19,57 @@ static u64 data_region_offset;
 static u32 cluster_size;
 static u32 root_cluster;
 static u32 backup_boot_sector_cluster;
+
+static u32 is_forbidden_char(u8 c)
+{
+    u8 forbidden_chars[] = {
+        0x22, 0x2a, 0x2b, 0x2c,
+        0x2e, 0x2f, 0x3a, 0x3b,
+        0x3c, 0x3d, 0x3e, 0x3f,
+        0x5b, 0x5c, 0x5d, 0x7c
+    };
+    u32 low  = 0;
+    u32 high = sizeof(forbidden_chars) - 1;
+    u32 mid  = 0;
+
+    while(low <= high)
+    {
+        mid = (low + ((high - low) / 2));
+
+        if(forbidden_chars[mid] > c)
+        {
+            high = mid - 1;
+            continue;
+        }
+        if(forbidden_chars[mid] < c)
+        {
+            low = mid + 1;
+            continue;
+        }
+        if(forbidden_chars[mid] == c)
+            return 1;
+    }
+
+    return 0;
+}
+
+static void validate_83_name(const u8 *input_name, u32 input_name_size, u8 *output_name)
+{
+    u8  new_name[11];
+
+    memset(new_name, 0x20, 11);
+
+    for(s32 i = 0; i < input_name_size; i++)
+    {
+        if(islower(input_name[i]))
+            new_name[i] = toupper(input_name[i]);
+
+        if(is_forbidden_char(input_name[i]))
+            new_name[i] = 0x20;
+    }
+
+    memcpy(output_name, new_name, 11);
+}
 
 s32 open_device(const char* dev)
 {
@@ -127,14 +179,15 @@ s32 set_label(const char* label)
     u32 label_offset = 0;
     Directory dir;
     struct fat_datetime dt;
+    u8 new_label[11];
 	
     memset(&dir, 0, sizeof(Directory));
     memset(&fe, 0, sizeof(fat_entry));
     memset(&dt, 0, sizeof(struct fat_datetime));
-    
-	if(strlen(label) < 11)
-		return -1;
-	
+    memset(new_label, 0, 11);
+
+    validate_83_name(label, strnlen(label, 11), new_label);
+
     if(get_next_fat(root_cluster, &fe) == -1)
         return -1;
     
@@ -144,7 +197,7 @@ s32 set_label(const char* label)
     if(fat_getdatetime(&dt) == -1)
         return -1;
     
-    memcpy(dir.name, label, 11);
+    memcpy(dir.name, new_label, 11);
     
     if(dir.attributes != ATTR_VOLUME_ID)
     {
@@ -159,7 +212,7 @@ s32 set_label(const char* label)
     
 	label_offset = sizeof(CBPB) + offsetof(FAT32BPB, volume_label);
 	
-	if(write_to_bootsector(label_offset, label, 11) == -1)
+	if(write_to_bootsector(label_offset, new_label, 11) == -1)
         return -1;
 	
     if(pwrite(fd, &dir, sizeof(Directory), fe.data_offset) == -1)
