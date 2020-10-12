@@ -4,3 +4,4 @@
 utils/*.o
 utils/fatlabel
 utils/lsroot
+utils/lsroot2
