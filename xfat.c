@@ -109,6 +109,64 @@ s32 open_device(const char* dev)
 	return 0;
 }
 
+s32 get_directory_entry(u32 *cluster_number, Directory *dir, u32 *offset)
+{
+    fat_entry fe;
+
+    memset(&fe, 0, sizeof(fat_entry));
+
+    /*
+     * Check if offset is aligned to size
+     * of Directory structure
+     */
+    if((*offset % sizeof(Directory)) != 0)
+    {
+        printf("get_directory_entry: position not aligned\n");
+        return -1;
+    }
+
+    if(get_next_fat(*cluster_number, &fe) == -1)
+    {
+        printf("get_directory_entry: could not get next fat entry\n");
+        return -1;
+    }
+
+read:
+    if(read_cluster(*cluster_number, *offset, dir, sizeof(Directory)) == -1)
+    {
+        if(fe.next_entry == 0x0FFFFFF8)
+        {
+            printf("get_directory_entry: reached end of directory\n");
+            return -1;
+        }
+
+        if(get_next_fat(fe.next_entry, &fe) == -1)
+        {
+            printf("get_directory_entry: could not get next fat entry while following chain\n");
+            return -1;
+        }
+
+        *cluster_number = fe.current_entry;
+        *offset = 0;
+        goto read;
+    }
+
+    /*
+     * The previous entry was the last allocated
+     * entry in the directory
+     */
+    if(dir->name[0] == 0x00)
+    {
+        printf("get_directory_entry: end of directory\n");
+
+        *offset = 0;
+        return -1;
+    }
+
+    *offset += sizeof(Directory);
+    return 0;
+}
+
 s32 get_next_fat(u32 fat_index, fat_entry *fe)
 {
     u32 next_fat = 0;
@@ -137,37 +195,31 @@ u32 get_root_cluster()
 	return root_cluster;
 }
 
-s32 read_cluster(u64 start_of_cluster, u32 offset, void *data, u32 size)
+s32 read_cluster(u32 cluster_number, u32 offset, void *data, u32 size)
 {
-    printf("start_of_cluster=%lu, offset=%u, size=%u\n", start_of_cluster, offset, size);
+    fat_entry fe;
+    u64 end_of_cluster = 0;
     
-    u64 end_of_cluster = (start_of_cluster + cluster_size);
-    u64 cluster_offset = start_of_cluster + offset;
+    memset(&fe, 0, sizeof(fat_entry));
     
-    printf("end_of_cluster=%lu\n", end_of_cluster);
-    
-    /* Check if the starting cluster offset
-     * is aligned to the cluster size
-     */
-    if((end_of_cluster % cluster_size) != 0)
-    {
-        printf("read_cluster: Start of cluster is not aligned\n");
+    if(get_next_fat(cluster_number, &fe) == -1)
         return -1;
-    }
+
+    end_of_cluster = fe.data_offset + cluster_size;
     
     /*
      * Ensure that this operation does not pass
      * the cluster boundary
      */
-    if((start_of_cluster + offset + size) >= end_of_cluster)
+    if((fe.data_offset + offset + size) >= end_of_cluster)
     {
         printf("read_cluster: reached end of cluster\n");
         return -1;
     }
     
-    /* Read and store the data in the data parameter.
+    /* Read and store the data into the data parameter.
      */
-    if(pread(fd, data, size, cluster_offset) == -1)
+    if(pread(fd, data, size, fe.data_offset + offset) == -1)
         return -1;
     
     return 0;

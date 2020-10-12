@@ -3,7 +3,8 @@ CCFLAGS := -I../
 LDFLAGS := -L../ -lxfat
 FATLABEL_OBJECTS := fatlabel.o
 LSROOT_OBJECTS := lsroot.o
-TESTS := fatlabel lsroot
+LSROOT2_OBJECTS := lsroot2.o
+TESTS := fatlabel lsroot lsroot2
 
 all: xfat $(TESTS)
 .PHONY: all
@@ -17,6 +18,8 @@ fatlabel: $(FATLABEL_OBJECTS)
 lsroot: $(LSROOT_OBJECTS)
 	$(CC) $(LDFLAGS) $< -o $@
 
+lsroot2: $(LSROOT2_OBJECTS)
+	$(CC) $(LDFLAGS) $< -o $@
 %.o: %.c
 	$(CC) $(CCFLAGS) -c $<
 

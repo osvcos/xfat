@@ -12,8 +12,14 @@ int main(int argc, char *argv[])
     u32 item_count = 0;
     u32 offset = sizeof(Directory);
     Directory dir;
+    u8 new_name[13];
     u8 type[4];
     
+    memset(&fe, 0, sizeof(fat_entry));
+    memset(&dir, 0, sizeof(Directory));
+    memset(new_name, 0, 13);
+    memset(type, 0, 4);
+
     if(argc != 2)
     {
         printf("Usage: lsroot <device>\n");
@@ -36,7 +42,7 @@ int main(int argc, char *argv[])
     
     while(1)
     {
-        if(read_cluster(fe.data_offset, offset, &dir, sizeof(Directory)) == -1)
+        if(read_cluster(fe.current_entry, offset, &dir, sizeof(Directory)) == -1)
         {
             printf("lsroot: read_cluster(() returned non-zero\n");
             
@@ -86,7 +92,11 @@ int main(int argc, char *argv[])
         else
             strncpy(type, "UNK\0", 4);
         
-        printf("%s    %u bytes    %s\n", dir.name, dir.file_size, type);
+        memcpy(new_name, dir.name, 8);
+        strncpy(new_name + 8, ".", 1);
+        memcpy(new_name + 9, dir.name + 8, 3);
+
+        printf("%s    %u bytes    %s\n", new_name, dir.file_size, type);
         
         offset += sizeof(Directory);
         item_count += 1;
