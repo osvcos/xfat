@@ -11,7 +11,7 @@ typedef struct {
 } fat_entry;
 
 s32 open_device(const char* dev);
-s32 get_directory_entry(u32 *cluster_number, Directory *dir, u32 *position);
+s32 get_directory_entry(u32 *cluster_number, Directory *dir, u32 *offset);
 s32 get_next_fat(u32 fat_index, fat_entry *fe);
 u32 get_root_cluster();
 s32 read_cluster(u32 cluster_number, u32 offset, void *data, u32 size);
