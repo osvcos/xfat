@@ -10,6 +10,9 @@ all: $(XFATLIB_OBJS)
 utils: all
 	make -C utils
 
+fuse: all
+	make -C fuse
+
 %.o: %.c
 	$(XFATLIB_CC) $(XFATLIB_CFLAGS) -c $<
 
@@ -17,3 +20,4 @@ clean:
 	@rm -rf *.o
 	@rm -rf $(XFATLIB_OUT)
 	@make -C utils clean
+	@make -C fuse clean
