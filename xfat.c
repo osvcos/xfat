@@ -109,6 +109,11 @@ s32 open_device(const char* dev)
 	return 0;
 }
 
+u32 get_cluster_size()
+{
+    return cluster_size;
+}
+
 s32 get_directory_entry(u32 *cluster_number, Directory *dir, u32 *offset)
 {
     fat_entry fe;
@@ -171,7 +176,7 @@ s32 get_next_fat(u32 fat_index, fat_entry *fe)
 {
     u32 next_fat = 0;
     u32 current_fat = fat_region_offset + (4 * fat_index);
-
+    
 	fe->current_entry = fat_index;
 	
 	if(pread(fd, &next_fat, sizeof(u32), current_fat) == -1)
@@ -195,12 +200,14 @@ u32 get_root_cluster()
 	return root_cluster;
 }
 
-s32 read_cluster(u32 cluster_number, u32 offset, void *data, u32 size)
+s32 read_cluster(u32 cluster_number, u64 offset, void *data, u32 size)
 {
     fat_entry fe;
     u64 end_of_cluster = 0;
     
     memset(&fe, 0, sizeof(fat_entry));
+    
+    printf("read_cluster(cluster_number=%u, offset=%lu, size=%u\n", cluster_number, offset, size);
     
     if(get_next_fat(cluster_number, &fe) == -1)
         return -1;
@@ -211,7 +218,7 @@ s32 read_cluster(u32 cluster_number, u32 offset, void *data, u32 size)
      * Ensure that this operation does not pass
      * the cluster boundary
      */
-    if((fe.data_offset + offset + size) >= end_of_cluster)
+    if((fe.data_offset + offset + size) > end_of_cluster)
     {
         printf("read_cluster: reached end of cluster\n");
         return -1;
