@@ -28,9 +28,9 @@ s32 prettify_83_name(u8 *input_name, u8 *output_name)
     
     memcpy(output_name, input_name, 8);
     
-    if(input_name[9] != 0x20
-        || input_name[10] != 0x20
-        || input_name[11] != 0x20)
+    if(input_name[8] != 0x20
+        || input_name[9] != 0x20
+        || input_name[10] != 0x20)
     {
         strncpy(output_name + 8, ".", 1);
         memcpy(output_name + 9, input_name + 8, 3);
