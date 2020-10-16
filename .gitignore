@@ -1,7 +1,4 @@
-*.o
-*.so
-
-utils/*.o
-utils/fatlabel
-utils/lsroot
-utils/lsroot2
+*
+!*.c
+!*.h
+!*.md
