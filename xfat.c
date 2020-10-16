@@ -188,8 +188,8 @@ s32 get_next_fat(u32 fat_index, fat_entry *fe)
 		fe->data_offset = 0;
 	else
 	{
-		u32 offset = data_region_offset + (cluster_size * (fat_index - 2));
-		fe->data_offset = offset;
+        fe->data_offset = data_region_offset
+            + (cluster_size * (fat_index - 2));
 	}
 
 	return 0;
