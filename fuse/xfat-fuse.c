@@ -105,7 +105,7 @@ static int xfat_getattr(const char *path, struct stat *stbuf)
     
     if(lookup_short_entry(path, &starting_cluster, &dir) == -1)
     {
-        printf("xfat_getattr: not found\n");
+        printf("xfat_getattr: %s not found\n", path);
         return -ENOENT;
     }
     
