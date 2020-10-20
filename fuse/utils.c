@@ -12,7 +12,7 @@ u32 get_cluster32(u16 hi, u16 low)
     
     printf("get_cluster32(hi=%u(%.4x), low=%u(%.4x))\n", hi, hi, low, low);
     
-    cluster |= ((low << 16) | hi);
+    cluster |= ((hi << 16) | low);
     
     printf("get_cluster32: cluster=%u(%.8x)\n", cluster, cluster);
     
