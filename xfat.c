@@ -174,15 +174,15 @@ s32 get_next_fat(u32 fat_index, fat_entry *fe)
 	
     if(pread(fd, &fe->next_entry, 4, offset) == -1)
         return -1;
-	
+    
 	if(fat_index == 0 || fat_index == 1)
 		fe->data_offset = 0;
 	else
 	{
-        fe->data_offset = data_region_offset
-            + (cluster_size * (fat_index - 2));
+        fe->data_offset = (data_region_offset
+            + ((u64) cluster_size * ((u64) fat_index - 2)));
 	}
-
+    
 	return 0;
 }
 
