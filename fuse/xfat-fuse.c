@@ -180,7 +180,7 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
         
         u32 bytes_to_read = 0;
         
-        if(current_size >= get_cluster_size())
+        if((current_size + offset_left) >= get_cluster_size())
             bytes_to_read = get_cluster_size() - offset_left;
         else
             bytes_to_read = current_size;
