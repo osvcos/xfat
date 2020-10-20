@@ -125,9 +125,10 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
     s32 change_times      = 0;
     u32 offset_left       = 0;
     s64 current_size      = size;
-    u64 read_in_cluster   = 0;
+    u64 change_cluster    = 0;
     u64 bytes_read        = 0;
     u32 root = get_root_cluster();
+    u32 bytes_to_read = 0;
     u8 pretty_name[13];
     fat_entry next;
     
@@ -173,8 +174,6 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
     {
         printf("xfat_read: current_size = %d\n", current_size);
         
-        u32 bytes_to_read = 0;
-        
         if((current_size + offset_left) >= get_cluster_size())
             bytes_to_read = get_cluster_size() - offset_left;
         else
@@ -182,10 +181,9 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
         
         current_size -= bytes_to_read;
         
-        if(read_in_cluster >= get_cluster_size())
+        if(change_cluster)
         {
             printf("xfat_read: reached cluster limit, changing cluster\n");
-            printf("xfat_read: read_in_cluster = %u\n", read_in_cluster);
             printf("xfat_read: current_cluster = %u\n", current_cluster);
             
             if(get_next_fat(current_cluster, &next) == -1)
@@ -195,7 +193,7 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
             }
             
             current_cluster = next.next_entry;
-            read_in_cluster = 0;
+            change_cluster = 0;
             
             printf("xfat_read: changed to cluster %u\n", current_cluster);
         }
@@ -209,8 +207,9 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
         printf("xfat_read: read operation succeded\n");
         
         bytes_read += bytes_to_read;
-        read_in_cluster = get_cluster_size();
+        change_cluster = 1;
         offset_left = 0;
+        bytes_to_read = 0;
     }
     
     return bytes_read;
