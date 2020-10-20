@@ -87,11 +87,11 @@ s32 lookup_short_entry(const char *path, u32 *starting_cluster, Directory *dir)
     }
     
 leave:
+    free(new_path);
     *starting_cluster = current_cluster;
     
     if(dir != NULL)
         memcpy(dir, &directory, sizeof(Directory));
-    free(new_path);
     
     return ret;
 }
