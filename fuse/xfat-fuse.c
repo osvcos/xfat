@@ -120,13 +120,20 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
                       struct fuse_file_info *fi)
 {
     Directory dir;
-    u32 off = 0;
     u32 starting_cluster = 0;
+    u32 current_cluster = 0;
+    s32 change_times      = 0;
+    u32 offset_left       = 0;
+    s64 current_size      = size;
+    u64 read_in_cluster   = 0;
+    u64 bytes_read        = 0;
     u32 root = get_root_cluster();
     u8 pretty_name[13];
+    fat_entry next;
     
     memset(&dir, 0, sizeof(Directory));
     memset(pretty_name, 0, 13);
+    memset(&next, 0, sizeof(fat_entry));
     
     printf("xfat_read(path=%s, size=%lu, offset=%lu)\n", path, size, offset);
     
@@ -135,13 +142,7 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
     
     prettify_83_name(dir.name, pretty_name);
         
-    u32 current_cluster = get_cluster32(dir.first_clus_hi, dir.first_clus_low);
-    u32 prev_cluster    = 0;
-    s32 change_times      = 0;
-    u32 offset_left       = 0;
-    s64 current_size      = size;
-    u64 read_in_cluster   = 0;
-    u64 bytes_read        = 0;
+    current_cluster = get_cluster32(dir.first_clus_hi, dir.first_clus_low);
     
     printf("xfat_read: found %s, start cluster is %u\n", pretty_name, current_cluster);
     
@@ -151,25 +152,19 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
         offset_left  = offset % get_cluster_size();
     }
     else
-    {
         offset_left = offset;
-    }
     
     printf("xfat_read: change_times=%d, offset_left=%d\n", change_times, offset_left);
     
     while(change_times-- > 0)
     {
-        fat_entry fe;
-        
-        prev_cluster = current_cluster;
-        
-        if(get_next_fat(current_cluster, &fe) == -1)
+        if(get_next_fat(current_cluster, &next) == -1)
         {
             printf("xfat_read: could not change to next cluster\n");
             return 0;
         }
         
-        current_cluster = fe.next_entry;
+        current_cluster = next.next_entry;
         
         printf("xfat_read: changed to cluster %d\n", current_cluster);
     }
@@ -193,24 +188,16 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
             printf("xfat_read: read_in_cluster = %u\n", read_in_cluster);
             printf("xfat_read: current_cluster = %u\n", current_cluster);
             
-            fat_entry fe;
-            
-            if(get_next_fat(current_cluster, &fe) == -1)
+            if(get_next_fat(current_cluster, &next) == -1)
             {
                 printf("xfat_read: error while changing fat entry\n");
                 return 0;
             }
             
-            current_cluster = fe.next_entry;
+            current_cluster = next.next_entry;
             read_in_cluster = 0;
             
             printf("xfat_read: changed to cluster %u\n", current_cluster);
-        }
-        
-        if(current_cluster == 0xFFFFFFFF)
-        {
-            printf("xfat_read: reached end of chain\n");
-            return bytes_read;
         }
         
         if(read_cluster(current_cluster, offset_left, buf + bytes_read, bytes_to_read) == -1)
