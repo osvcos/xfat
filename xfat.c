@@ -137,7 +137,7 @@ read_cluster:
         return -1;
     }
 
-    if(read_cluster(*cluster_number, *offset, dir, sizeof(Directory)) == -1)
+    if(read_cluster(fe.current_entry, *offset, dir, sizeof(Directory)) == -1)
     {
         if(fe.next_entry == 0x0FFFFFF8)
         {

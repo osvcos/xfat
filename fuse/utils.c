@@ -6,6 +6,18 @@
 #include "utils.h"
 #include "xfat.h"
 
+u32 get_cluster32(u16 hi, u16 low)
+{
+    u32 cluster = 0;
+    
+    printf("get_cluster32(hi=%u(%.4x), low=%u(%.4x))\n", hi, hi, low, low);
+    
+    cluster |= ((low << 16) | hi);
+    
+    printf("get_cluster32: cluster=%u(%.8x)\n", cluster, cluster);
+    
+    return cluster;
+}
 s32 get_stat_from_directory(Directory *dir, struct stat *st)
 {
     memset(st, 0, sizeof(struct stat));
@@ -57,7 +69,8 @@ s32 lookup_short_entry(const char *path, u32 *starting_cluster, Directory *dir)
             {
                 printf("lookup_short_entry: foud %s\n", token);
                 
-                current_cluster = (directory.first_clus_hi << 16) | directory.first_clus_low;
+                current_cluster = get_cluster32(directory.first_clus_hi,
+                                                directory.first_clus_low);
                 offset = 0;
                 token = strtok_r(NULL, "/", &intbuff);
                 

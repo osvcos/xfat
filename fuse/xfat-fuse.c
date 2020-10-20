@@ -135,7 +135,7 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
     
     prettify_83_name(dir.name, pretty_name);
         
-    u32 current_cluster = (dir.first_clus_hi << 16) | dir.first_clus_low;
+    u32 current_cluster = get_cluster32(dir.first_clus_hi, dir.first_clus_low);
     u32 prev_cluster    = 0;
     s32 change_times      = 0;
     u32 offset_left       = 0;
