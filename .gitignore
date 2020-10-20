@@ -2,3 +2,5 @@
 !*.c
 !*.h
 !*.md
+!fuse
+!utils
