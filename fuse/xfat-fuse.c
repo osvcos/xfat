@@ -13,7 +13,7 @@
 
 static void usage()
 {
-    
+    printf("Usage: xfat-fuse <device> <mountpoint>\n");
 }
 
 static void xfat_destroy(void *data)
