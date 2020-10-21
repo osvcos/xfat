@@ -8,16 +8,9 @@
 
 u32 get_cluster32(u16 hi, u16 low)
 {
-    u32 cluster = 0;
-    
-    printf("get_cluster32(hi=%u(%.4x), low=%u(%.4x))\n", hi, hi, low, low);
-    
-    cluster |= ((hi << 16) | low);
-    
-    printf("get_cluster32: cluster=%u(%.8x)\n", cluster, cluster);
-    
-    return cluster;
+    return ((hi << 16) | low);
 }
+
 s32 get_stat_from_directory(Directory *dir, struct stat *st)
 {
     memset(st, 0, sizeof(struct stat));
