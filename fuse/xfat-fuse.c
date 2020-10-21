@@ -159,7 +159,7 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
     
     while(change_times-- > 0)
     {
-        if(get_next_fat(current_cluster, &next) == -1)
+        if(get_next_entry(current_cluster, &next) == -1)
         {
             printf("xfat_read: could not change to next cluster\n");
             return 0;
@@ -186,7 +186,7 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
             printf("xfat_read: reached cluster limit, changing cluster\n");
             printf("xfat_read: current_cluster = %u\n", current_cluster);
             
-            if(get_next_fat(current_cluster, &next) == -1)
+            if(get_next_entry(current_cluster, &next) == -1)
             {
                 printf("xfat_read: error while changing fat entry\n");
                 return 0;

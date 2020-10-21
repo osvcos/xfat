@@ -131,7 +131,7 @@ s32 get_directory_entry(u32 *cluster_number, Directory *dir, u32 *offset)
     }
 
 read_cluster:
-    if(get_next_fat(*cluster_number, &fe) == -1)
+    if(get_next_entry(*cluster_number, &fe) == -1)
     {
         printf("get_directory_entry: could not get next fat entry\n");
         return -1;
@@ -166,7 +166,7 @@ read_cluster:
     return 0;
 }
 
-s32 get_next_fat(u32 fat_index, fat_entry *fe)
+s32 get_next_entry(u32 fat_index, fat_entry *fe)
 {
     u64 offset = fat_region_offset + (4 * fat_index);
     
@@ -200,7 +200,7 @@ s32 read_cluster(u32 cluster_number, u64 offset, void *data, u32 size)
     
     printf("read_cluster(cluster_number=%u, offset=%lu, size=%u\n", cluster_number, offset, size);
     
-    if(get_next_fat(cluster_number, &fe) == -1)
+    if(get_next_entry(cluster_number, &fe) == -1)
         return -1;
 
     end_of_cluster = fe.data_offset + cluster_size;
@@ -238,7 +238,7 @@ s32 set_label(const char* label)
 
     validate_83_name(label, strnlen(label, 11), new_label);
 
-    if(get_next_fat(root_cluster, &fe) == -1)
+    if(get_next_entry(root_cluster, &fe) == -1)
         return -1;
     
     if(pread(fd, &dir, sizeof(Directory), fe.data_offset) == -1)
