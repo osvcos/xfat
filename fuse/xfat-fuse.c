@@ -91,8 +91,6 @@ static int xfat_getattr(const char *path, struct stat *stbuf)
         }
         else
         {
-            printf("xfat_getattr: first entry in root directory is not volume label\n");
-            
             stbuf->st_size = 0;
             stbuf->st_mode = S_IFDIR | 0755;
             stbuf->st_uid     = getuid();

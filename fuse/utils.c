@@ -35,7 +35,7 @@ s32 lookup_short_entry(const char *path, u32 *starting_cluster, Directory *dir)
     char pretty_name[13];
     u32 current_cluster = get_root_cluster();
     u32 offset          = 0;
-    u32 ret             = -1;
+    u32 ret             = 0;
     char *token         = NULL;
     char *intbuff       = NULL;
     Directory directory;
@@ -46,9 +46,6 @@ s32 lookup_short_entry(const char *path, u32 *starting_cluster, Directory *dir)
     memset(&directory, 0, sizeof(Directory));
     
     token = strtok_r(new_path, "/", &intbuff);
-    
-    if(token == NULL)
-        ret = 0;
     
     while(token != NULL)
     {
@@ -76,9 +73,10 @@ s32 lookup_short_entry(const char *path, u32 *starting_cluster, Directory *dir)
         }
         
         ret = -1;
-        break;
+        goto leave;
     }
     
+    ret = 0;
 leave:
     free(new_path);
     *starting_cluster = current_cluster;

@@ -14,7 +14,7 @@
 static s32 fd;
 
 static u64 fat_region_offset;
-static u32 bytes_per_sector;
+static u16 bytes_per_sector;
 static u64 data_region_offset;
 static u32 cluster_size;
 static u32 root_cluster;
@@ -175,7 +175,7 @@ s32 get_next_entry(u32 fat_index, fat_entry *fe)
     if(pread(fd, &fe->next_entry, 4, offset) == -1)
         return -1;
     
-	if(fat_index == 0 || fat_index == 1)
+	if(fat_index < 2)
 		fe->data_offset = 0;
 	else
 	{
