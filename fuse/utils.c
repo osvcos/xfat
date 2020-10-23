@@ -10,13 +10,13 @@
 
 static s32 get_tm(u16 date_field, u16 time_field, struct tm *tms)
 {
-    struct tm t;
+    struct tm tm_struct;
     time_t raw;
     
-    memset(&t, 0, sizeof(struct tm));
+    memset(&tm_struct, 0, sizeof(struct tm));
     
     time(&raw);
-    localtime_r(&raw, &t);
+    localtime_r(&raw, &tm_struct);
     
     tms->tm_mday = date_field & 0x001F;
     tms->tm_mon  = (((date_field & 0x01E0) >> 5) - 1);
@@ -29,7 +29,7 @@ static s32 get_tm(u16 date_field, u16 time_field, struct tm *tms)
     tms->tm_min  = ((time_field & 0x07E0) >> 5);
     tms->tm_hour = ((time_field & 0xF800) >> 11);
     
-    if(t.tm_isdst)
+    if(tm_struct.tm_isdst)
         tms->tm_hour -= 1;
     
     return 0;
@@ -44,14 +44,10 @@ s32 get_stat_from_directory(Directory *dir, struct stat *st)
 {
     struct tm tm_atime;
     struct tm tm_mtime;
-    struct timespec atime;
-    struct timespec mtime;
     
     memset(st, 0, sizeof(struct stat));
     memset(&tm_atime, 0, sizeof(struct tm));
     memset(&tm_mtime, 0, sizeof(struct tm));
-    memset(&atime, 0, sizeof(struct timespec));
-    memset(&mtime, 0, sizeof(struct timespec));
     
     st->st_size    = dir->file_size;
     st->st_uid     = getuid();
