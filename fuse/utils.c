@@ -1,10 +1,39 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "utils.h"
 #include "xfat.h"
+
+static s32 get_tm(u16 date_field, u16 time_field, struct tm *tms)
+{
+    struct tm t;
+    time_t raw;
+    
+    memset(&t, 0, sizeof(struct tm));
+    
+    time(&raw);
+    localtime_r(&raw, &t);
+    
+    tms->tm_mday = date_field & 0x001F;
+    tms->tm_mon  = (((date_field & 0x01E0) >> 5) - 1);
+    tms->tm_year = (((date_field & 0xFE00) >> 9) + 80);
+    
+    if(time == 0)
+        return 0;
+    
+    tms->tm_sec  = time_field & 0x001F;
+    tms->tm_min  = ((time_field & 0x07E0) >> 5);
+    tms->tm_hour = ((time_field & 0xF800) >> 11);
+    
+    if(t.tm_isdst)
+        tms->tm_hour -= 1;
+    
+    return 0;
+}
 
 u32 get_cluster32(u16 hi, u16 low)
 {
@@ -13,7 +42,16 @@ u32 get_cluster32(u16 hi, u16 low)
 
 s32 get_stat_from_directory(Directory *dir, struct stat *st)
 {
+    struct tm tm_atime;
+    struct tm tm_mtime;
+    struct timespec atime;
+    struct timespec mtime;
+    
     memset(st, 0, sizeof(struct stat));
+    memset(&tm_atime, 0, sizeof(struct tm));
+    memset(&tm_mtime, 0, sizeof(struct tm));
+    memset(&atime, 0, sizeof(struct timespec));
+    memset(&mtime, 0, sizeof(struct timespec));
     
     st->st_size    = dir->file_size;
     st->st_uid     = getuid();
@@ -25,6 +63,12 @@ s32 get_stat_from_directory(Directory *dir, struct stat *st)
         st->st_mode = S_IFREG | 0644;
     
     st->st_blksize = get_cluster_size();
+    
+    get_tm(dir->last_access_date, 0, &tm_atime);
+    get_tm(dir->last_mod_date, dir->last_mod_time, &tm_mtime);
+    
+    st->st_atime = mktime(&tm_atime);
+    st->st_mtime = mktime(&tm_mtime);
     
     return 0;
 }
