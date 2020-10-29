@@ -1,6 +1,8 @@
 #ifndef DATETIME_H
 #define DATETIME_H
 
+#include "time.h"
+
 #include "types.h"
 
 struct fat_datetime {
@@ -15,5 +17,6 @@ struct fat_datetime {
 s32 fat_getdatetime(struct fat_datetime *dt);
 u16 fat_gettime(struct fat_datetime *dt);
 u16 fat_getdate(struct fat_datetime *dt);
+s32 get_tm(u16 date_field, u16 time_field, struct tm *tms);
 
 #endif
