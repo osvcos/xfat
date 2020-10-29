@@ -87,7 +87,6 @@ static int xfat_getattr(const char *path, struct stat *stbuf)
         if(dir.attributes == ATTR_VOLUME_ID)
         {
             get_stat_from_directory(&dir, stbuf);
-            return 0;
         }
         else
         {
@@ -95,10 +94,10 @@ static int xfat_getattr(const char *path, struct stat *stbuf)
             stbuf->st_mode = S_IFDIR | 0755;
             stbuf->st_uid     = getuid();
             stbuf->st_gid     = getgid();
-            return 0;
         }
         
         stbuf->st_nlink = 2;
+        return 0;
     }
     
     if(lookup_short_entry(path, &starting_cluster, &dir) == -1)
