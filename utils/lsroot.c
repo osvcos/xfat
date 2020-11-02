@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     
     root_cluster = get_root_cluster();
     
-    if(get_next_fat(root_cluster, &fe) == -1)
+    if(get_next_entry(root_cluster, &fe) == -1)
     {
         printf("Could not get next fat entry for root directory\n");
         exit(1);
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
             else
             {
                 printf("lsroot: getting the next cluster of the root directory\n");
-                if(get_next_fat(fe.next_entry, &fe) == -1)
+                if(get_next_entry(fe.next_entry, &fe) == -1)
                 {
                     printf("lsroot: Could not get fat entry for next cluster\n");
                     exit(1);

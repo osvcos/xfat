@@ -11,12 +11,12 @@ int main(int argc, char *argv[])
     fat_entry fe;
     u32 item_count = 0;
     u32 offset = 0;
-    Directory dir;
+    dir_info di;
     u8 new_name[13];
     u8 type[4];
     
     memset(&fe, 0, sizeof(fat_entry));
-    memset(&dir, 0, sizeof(Directory));
+    memset(&di, 0, sizeof(dir_info));
     memset(new_name, 0, 13);
     memset(type, 0, 4);
 
@@ -34,30 +34,30 @@ int main(int argc, char *argv[])
     
     root_cluster = get_root_cluster();
     
-    while(get_directory_entry(&root_cluster, &dir, &offset) != -1)
+    while(get_directory_entry(&root_cluster, &di, &offset) != -1)
     {
-        if(dir.name[0] == 0xE5)
+        if(di.dir.name[0] == 0xE5)
             continue;
         
-        if(dir.attributes != ATTR_LONG_NAME)
+        if(di.dir.attributes != ATTR_LONG_NAME)
             item_count += 1;
-        if(dir.attributes == ATTR_LONG_NAME)
+        if(di.dir.attributes == ATTR_LONG_NAME)
             strncpy(type, "LFN\0", 4);
-        else if(dir.attributes & ATTR_ARCHIVE)
+        else if(di.dir.attributes & ATTR_ARCHIVE)
             strncpy(type, "FIL\0", 4);
-        else if(dir.attributes & ATTR_DIRECTORY)
+        else if(di.dir.attributes & ATTR_DIRECTORY)
             strncpy(type, "DIR\0", 4);
-        else if(dir.attributes & ATTR_VOLUME_ID)
+        else if(di.dir.attributes & ATTR_VOLUME_ID)
             strncpy(type, "LBL\0", 4);
         else
             strncpy(type, "UNK\0", 4);
         
-        memcpy(new_name, dir.name, 8);
+        memcpy(new_name, di.dir.name, 8);
         strncpy(new_name + 8, ".", 1);
-        memcpy(new_name + 9, dir.name + 8, 3);
+        memcpy(new_name + 9, di.dir.name + 8, 3);
         
         printf("Entry name: %s\n", new_name);
-        printf("Entry size (in bytes): %u\n", dir.file_size);
+        printf("Entry size (in bytes): %u\n", di.dir.file_size);
         printf("Entry type: %s\n\n", type);
     }
     

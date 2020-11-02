@@ -27,11 +27,11 @@ static int xfat_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     u32 root = get_root_cluster();
     u32 starting_cluster = 0;
     u32 off = 0;
-    Directory dir;
+    dir_info di;
     u8 pretty_name[13];
     struct stat st;
     
-    memset(&dir, 0, sizeof(Directory));
+    memset(&di, 0, sizeof(dir_info));
     memset(pretty_name, 0, 13);
     memset(&st, 0, sizeof(struct stat));
     
@@ -50,17 +50,15 @@ static int xfat_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         filler(buf, "..", NULL, 0);
     }
     
-    while(get_directory_entry(&starting_cluster, &dir, &off) != -1)
+    while(get_directory_entry(&starting_cluster, &di, &off) != -1)
     {
-        if(dir.attributes == ATTR_VOLUME_ID)
+        if(di.dir.attributes == ATTR_VOLUME_ID)
             continue;
-        if(dir.name[0] == 0xE5)
-            continue;
-        if(dir.attributes == ATTR_LONG_NAME)
+        if(di.dir.name[0] == 0xE5)
             continue;
         
-        prettify_83_name(dir.name, pretty_name);
-        get_stat_from_directory(&dir, &st);
+        prettify_83_name(di.dir.name, pretty_name);
+        get_stat_from_directory(&di.dir, &st);
         filler(buf, pretty_name, &st, 0);
     }
     
@@ -71,22 +69,22 @@ static int xfat_getattr(const char *path, struct stat *stbuf)
 {
     u8 pretty_name[13];
     u32 starting_cluster = 0;
-    Directory dir;
+    dir_info di;
     u32 offset = 0;
     u32 root = get_root_cluster();
     
     memset(pretty_name, 0, 13);
-    memset(&dir, 0, sizeof(Directory));
+    memset(&di, 0, sizeof(dir_info));
     
     printf("xfat_getattr(path=%s)\n", path);
     
     if(strncmp(path, "/\0", 2) == 0)
     {
-        get_directory_entry(&root, &dir, &offset);
+        get_directory_entry(&root, &di, &offset);
         
-        if(dir.attributes == ATTR_VOLUME_ID)
+        if(di.dir.attributes == ATTR_VOLUME_ID)
         {
-            get_stat_from_directory(&dir, stbuf);
+            get_stat_from_directory(&di.dir, stbuf);
         }
         else
         {
@@ -100,14 +98,14 @@ static int xfat_getattr(const char *path, struct stat *stbuf)
         return 0;
     }
     
-    if(lookup_short_entry(path, &starting_cluster, &dir) == -1)
+    if(lookup_short_entry(path, &starting_cluster, &di) == -1)
     {
         printf("xfat_getattr: %s not found\n", path);
         return -ENOENT;
     }
     
     printf("xfat_getattr: found match for %s\n", pretty_name);
-    get_stat_from_directory(&dir, stbuf);
+    get_stat_from_directory(&di.dir, stbuf);
     stbuf->st_nlink = 1;
     
     return 0;
@@ -116,7 +114,7 @@ static int xfat_getattr(const char *path, struct stat *stbuf)
 static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
                       struct fuse_file_info *fi)
 {
-    Directory dir;
+    dir_info di;
     u32 starting_cluster = 0;
     u32 current_cluster = 0;
     s32 change_times      = 0;
@@ -129,18 +127,18 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
     u8 pretty_name[13];
     fat_entry next;
     
-    memset(&dir, 0, sizeof(Directory));
+    memset(&di, 0, sizeof(dir_info));
     memset(pretty_name, 0, 13);
     memset(&next, 0, sizeof(fat_entry));
     
     printf("xfat_read(path=%s, size=%lu, offset=%lu)\n", path, size, offset);
     
-    if(lookup_short_entry(path, &starting_cluster, &dir) == -1)
+    if(lookup_short_entry(path, &starting_cluster, &di) == -1)
         return -ENOENT;
     
-    prettify_83_name(dir.name, pretty_name);
+    prettify_83_name(di.dir.name, pretty_name);
         
-    current_cluster = get_cluster32(dir.first_clus_hi, dir.first_clus_low);
+    current_cluster = get_cluster32(di.dir.first_clus_hi, di.dir.first_clus_low);
     
     printf("xfat_read: found %s, start cluster is %u\n", pretty_name, current_cluster);
     

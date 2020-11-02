@@ -43,7 +43,7 @@ s32 get_stat_from_directory(Directory *dir, struct stat *st)
     return 0;
 }
 
-s32 lookup_short_entry(const char *path, u32 *starting_cluster, Directory *dir)
+s32 lookup_short_entry(const char *path, u32 *starting_cluster, dir_info *di)
 {
     char *new_path      = NULL;
     char pretty_name[13];
@@ -52,12 +52,12 @@ s32 lookup_short_entry(const char *path, u32 *starting_cluster, Directory *dir)
     u32 ret             = 0;
     char *token         = NULL;
     char *intbuff       = NULL;
-    Directory directory;
+    dir_info dinfo;
     
     new_path = malloc(strlen(path + 1) + 1);
     memset(new_path, 0, strlen(path + 1) + 1);
     memcpy(new_path, path + 1, strlen(path + 1));
-    memset(&directory, 0, sizeof(Directory));
+    memset(&dinfo, 0, sizeof(dir_info));
     
     token = strtok_r(new_path, "/", &intbuff);
     
@@ -65,16 +65,16 @@ s32 lookup_short_entry(const char *path, u32 *starting_cluster, Directory *dir)
     {
         printf("lookup_short_entry: looking for token %s\n", token);
         
-        while(get_directory_entry(&current_cluster, &directory, &offset) != -1)
+        while(get_directory_entry(&current_cluster, &dinfo, &offset) != -1)
         {
-            prettify_83_name(directory.name, pretty_name);
+            prettify_83_name(dinfo.dir.name, pretty_name);
             
             if(strncmp(token, pretty_name, 12) == 0)
             {
                 printf("lookup_short_entry: foud %s\n", token);
                 
-                current_cluster = get_cluster32(directory.first_clus_hi,
-                                                directory.first_clus_low);
+                current_cluster = get_cluster32(dinfo.dir.first_clus_hi,
+                                                dinfo.dir.first_clus_low);
                 offset = 0;
                 token = strtok_r(NULL, "/", &intbuff);
                 
@@ -95,8 +95,8 @@ leave:
     free(new_path);
     *starting_cluster = current_cluster;
     
-    if(dir != NULL)
-        memcpy(dir, &directory, sizeof(Directory));
+    if(di != NULL)
+        memcpy(di, &dinfo, sizeof(dir_info));
     
     return ret;
 }
