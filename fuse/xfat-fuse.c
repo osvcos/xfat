@@ -24,7 +24,6 @@ static void xfat_destroy(void *data)
 static int xfat_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                          off_t offset, struct fuse_file_info *fi)
 {
-    u32 root = get_root_cluster();
     u32 starting_cluster = 0;
     u32 off = 0;
     dir_info di;
@@ -68,10 +67,9 @@ static int xfat_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 static int xfat_getattr(const char *path, struct stat *stbuf)
 {
     u8 pretty_name[13];
-    u32 starting_cluster = 0;
+    u32 starting_cluster = get_root_cluster();
     dir_info di;
     u32 offset = 0;
-    u32 root = get_root_cluster();
     
     memset(pretty_name, 0, 13);
     memset(&di, 0, sizeof(dir_info));
@@ -80,7 +78,7 @@ static int xfat_getattr(const char *path, struct stat *stbuf)
     
     if(strncmp(path, "/\0", 2) == 0)
     {
-        get_directory_entry(&root, &di, &offset);
+        get_directory_entry(&starting_cluster, &di, &offset);
         
         if(di.dir.attributes == ATTR_VOLUME_ID)
         {
@@ -122,7 +120,6 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
     s64 current_size      = size;
     u64 change_cluster    = 0;
     u64 bytes_read        = 0;
-    u32 root = get_root_cluster();
     u32 bytes_to_read = 0;
     u8 pretty_name[13];
     fat_entry next;
