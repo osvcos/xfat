@@ -43,7 +43,7 @@ s32 get_stat_from_directory(Directory *dir, struct stat *st)
     return 0;
 }
 
-s32 lookup_short_entry(const char *path, u32 *starting_cluster, dir_info *di)
+s32 lookup_entry(const char *path, u32 *starting_cluster, dir_info *di)
 {
     char *new_path      = NULL;
     char pretty_name[13];
@@ -63,15 +63,15 @@ s32 lookup_short_entry(const char *path, u32 *starting_cluster, dir_info *di)
     
     while(token != NULL)
     {
-        printf("lookup_short_entry: looking for token %s\n", token);
+        printf("lookup_entry: looking for token %s\n", token);
         
         while(get_directory_entry(&current_cluster, &dinfo, &offset) != -1)
         {
-            prettify_83_name(dinfo.dir.name, pretty_name);
+            printf("lookup_entry: dinfo.long_name = %s\n", dinfo.long_name);
             
-            if(strncmp(token, pretty_name, 12) == 0)
+            if(strncmp(token, dinfo.long_name, MAX_LFN_LENGTH) == 0)
             {
-                printf("lookup_short_entry: foud %s\n", token);
+                printf("lookup_entry: found %s\n", token);
                 
                 current_cluster = get_cluster32(dinfo.dir.first_clus_hi,
                                                 dinfo.dir.first_clus_low);
@@ -99,20 +99,5 @@ leave:
         memcpy(di, &dinfo, sizeof(dir_info));
     
     return ret;
-}
-
-s32 prettify_83_name(u8 *input_name, u8 *output_name)
-{
-    memset(output_name, 0, 13);
-    
-    memcpy(output_name, input_name, 8);
-    
-    if(input_name[8] != 0x20
-        || input_name[9] != 0x20
-        || input_name[10] != 0x20)
-    {
-        strncpy(output_name + 8, ".", 1);
-        memcpy(output_name + 9, input_name + 8, 3);
-    }
 }
 

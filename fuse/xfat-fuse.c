@@ -36,7 +36,7 @@ static int xfat_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     
     printf("xfat_readdir(path=%s, offset=%u\n", path, offset);
     
-    if(lookup_short_entry(path, &starting_cluster, NULL) == -1)
+    if(lookup_entry(path, &starting_cluster, NULL) == -1)
     {
         printf("xfat_readdir: not found\n");
         return -ENOENT;
@@ -56,9 +56,8 @@ static int xfat_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         if(di.dir.name[0] == 0xE5)
             continue;
         
-        prettify_83_name(di.dir.name, pretty_name);
         get_stat_from_directory(&di.dir, &st);
-        filler(buf, pretty_name, &st, 0);
+        filler(buf, di.long_name, &st, 0);
     }
     
     return 0;
@@ -96,13 +95,13 @@ static int xfat_getattr(const char *path, struct stat *stbuf)
         return 0;
     }
     
-    if(lookup_short_entry(path, &starting_cluster, &di) == -1)
+    if(lookup_entry(path, &starting_cluster, &di) == -1)
     {
         printf("xfat_getattr: %s not found\n", path);
         return -ENOENT;
     }
     
-    printf("xfat_getattr: found match for %s\n", pretty_name);
+    printf("xfat_getattr: found match for %s\n", di.long_name);
     get_stat_from_directory(&di.dir, stbuf);
     stbuf->st_nlink = 1;
     
@@ -130,14 +129,12 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
     
     printf("xfat_read(path=%s, size=%lu, offset=%lu)\n", path, size, offset);
     
-    if(lookup_short_entry(path, &starting_cluster, &di) == -1)
+    if(lookup_entry(path, &starting_cluster, &di) == -1)
         return -ENOENT;
-    
-    prettify_83_name(di.dir.name, pretty_name);
         
     current_cluster = get_cluster32(di.dir.first_clus_hi, di.dir.first_clus_low);
     
-    printf("xfat_read: found %s, start cluster is %u\n", pretty_name, current_cluster);
+    printf("xfat_read: found %s, start cluster is %u\n", di.long_name, current_cluster);
     
     if(offset >= get_cluster_size())
     {
