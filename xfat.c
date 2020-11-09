@@ -119,8 +119,6 @@ s32 open_device(const char* dev)
     backup_boot_sector_cluster = fat32_bpb.boot_sector_copy;
     cluster_count = data_sectors / common_bpb.sectors_per_cluster;
     
-    printf("open_device: fsi.free_cluster_count = %u\n", fsi.free_cluster_count);
-    
     if(fsi.free_cluster_count == 0xFFFFFFFF)
         free_clusters = 0;
     else

@@ -18,7 +18,7 @@ static s32 prettify_83_name(u8 *input_name, u8 *output_name)
     {
         if(input_name[i] == 0x20)
             break;
-        output_name[i] = tolower(input_name[i]);
+        output_name[i] = input_name[i];
     }
     
     if(input_name[8] != 0x20
@@ -29,7 +29,11 @@ static s32 prettify_83_name(u8 *input_name, u8 *output_name)
         
         for(int i = 0; i < 3; i++)
         {
-            u8 c = tolower(input_name[i + 8]);
+            u8 c = input_name[i + 8];
+            
+            if(c == 0x20)
+                break;
+            
             strncat(output_name, &c, 1);
         }
     }
