@@ -86,7 +86,7 @@ s32 open_device(const char* dev)
         return -1;
 
     if(pread(fd, &common_bpb, sizeof(CBPB), 0) == -1)
-		return -1;
+        return -1;
 
     if(pread(fd, &fat32_bpb, sizeof(FAT32BPB), sizeof(CBPB)) == -1)
         return -1;
@@ -94,19 +94,19 @@ s32 open_device(const char* dev)
     if(fat32_bpb.ext_flags & 0x0080)
         fat_in_use = (fat32_bpb.ext_flags & 0x000F);
 
-	bytes_per_sector = common_bpb.bytes_per_sector;
+    bytes_per_sector = common_bpb.bytes_per_sector;
 
-	fat_region_offset = (common_bpb.reserved_sectors * bytes_per_sector)
+    fat_region_offset = (common_bpb.reserved_sectors * bytes_per_sector)
         + (fat_in_use * fat32_bpb.fat_size_32 * bytes_per_sector * common_bpb.fat_count);
 
-	data_region_offset = (common_bpb.reserved_sectors * bytes_per_sector)
+    data_region_offset = (common_bpb.reserved_sectors * bytes_per_sector)
         + ((fat32_bpb.fat_size_32 * bytes_per_sector) * common_bpb.fat_count);
 
-	cluster_size = bytes_per_sector * common_bpb.sectors_per_cluster;
-	root_cluster = fat32_bpb.root_cluster;
-	backup_boot_sector_cluster = fat32_bpb.boot_sector_copy;
+    cluster_size = bytes_per_sector * common_bpb.sectors_per_cluster;
+    root_cluster = fat32_bpb.root_cluster;
+    backup_boot_sector_cluster = fat32_bpb.boot_sector_copy;
 
-	return 0;
+    return 0;
 }
 
 u32 get_cluster_size()
@@ -117,19 +117,17 @@ u32 get_cluster_size()
 s32 get_next_entry(u32 fat_index, fat_entry *fe)
 {
     u64 offset = fat_region_offset + (4 * fat_index);
-    
-	fe->current_entry = fat_index;
-	
+    fe->current_entry = fat_index;
+    fe->data_offset = 0;
+
     if(pread(fd, &fe->next_entry, 4, offset) == -1)
         return -1;
     
-	if(fat_index < 2)
-		fe->data_offset = 0;
-	else
-	{
+    if(fat_index >= 2)
+    {
         fe->data_offset = (data_region_offset
             + ((u64) cluster_size * ((u64) fat_index - 2)));
-	}
+    }
     
 	return 0;
 }
@@ -178,7 +176,7 @@ s32 set_label(const char* label)
     Directory dir;
     struct fat_datetime dt;
     u8 new_label[11];
-	
+
     memset(&dir, 0, sizeof(Directory));
     memset(&fe, 0, sizeof(fat_entry));
     memset(&dt, 0, sizeof(struct fat_datetime));
@@ -208,11 +206,11 @@ s32 set_label(const char* label)
     dir.last_mod_date    = fat_getdate(&dt);
     dir.last_mod_time = fat_gettime(&dt);
     
-	label_offset = sizeof(CBPB) + offsetof(FAT32BPB, volume_label);
-	
-	if(write_to_bootsector(label_offset, new_label, 11) == -1)
+    label_offset = sizeof(CBPB) + offsetof(FAT32BPB, volume_label);
+
+    if(write_to_bootsector(label_offset, new_label, 11) == -1)
         return -1;
-	
+
     if(pwrite(fd, &dir, sizeof(Directory), fe.data_offset) == -1)
         return -1;
     

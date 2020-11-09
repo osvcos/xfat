@@ -24,19 +24,12 @@ static s32 prettify_83_name(u8 *input_name, u8 *output_name)
     }
 }
 
-static void to_utf8(u8 *input, u32 osize, u8 *output) {
-    u32 index = 0;
-    u32 step = 0;
-    
+static void to_utf8(u8 *input, u32 osize, u8 *output)
+{
     for(int i = 0; i < osize; i ++)
     {
-        u8 *c = ((u8*) (u16*) input) + step;
-        
-        if(*c == 0xFF)
-            *c = 0x0;
-        
-        output[index++] = *c;
-        step += 2;
+        u8 *c = ((u8*) (u16*) input) + (i * 2);
+        output[i] = (*c == 0xFF) ? 0x00 : *c;
     }
 }
 
@@ -129,7 +122,6 @@ read_cluster:
     printf("get_directory_entry: final lfn %s\n", di->long_name);
     
     *offset += sizeof(Directory);
-    memset(lfns, 0, (sizeof(names) * lfn_count));
     free(lfns);
     return 0;
 }

@@ -19,18 +19,18 @@
 #define MAX_LFN_LENGTH 255
 
 typedef struct __attribute__((packed)) {
-	u8  name[11];
-	u8  attributes;
-	u8  reserved;
-	u8  time_tenth;
-	u16 creation_time;
-	u16 creation_date;
-	u16 last_access_date;
-	u16 first_clus_hi;
-	u16 last_mod_time;
-	u16 last_mod_date;
-	u16 first_clus_low;
-	u32 file_size;
+    u8  name[11];
+    u8  attributes;
+    u8  reserved;
+    u8  time_tenth;
+    u16 creation_time;
+    u16 creation_date;
+    u16 last_access_date;
+    u16 first_clus_hi;
+    u16 last_mod_time;
+    u16 last_mod_date;
+    u16 first_clus_low;
+    u32 file_size;
 } Directory;
 
 typedef struct __attribute__((packed)) {

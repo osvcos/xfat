@@ -5,9 +5,9 @@
 #include "types.h"
 
 typedef struct {
-	u32 current_entry;
-	u64 data_offset;
-	u32 next_entry;
+    u32 current_entry;
+    u64 data_offset;
+    u32 next_entry;
 } fat_entry;
 
 s32 open_device(const char* dev);

@@ -46,7 +46,6 @@ s32 get_stat_from_directory(Directory *dir, struct stat *st)
 s32 lookup_entry(const char *path, u32 *starting_cluster, dir_info *di)
 {
     char *new_path      = NULL;
-    char pretty_name[13];
     u32 current_cluster = get_root_cluster();
     u32 offset          = 0;
     u32 ret             = 0;
