@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,14 +14,24 @@ typedef struct {
 
 static s32 prettify_83_name(u8 *input_name, u8 *output_name)
 {
-    memcpy(output_name, input_name, 8);
+    for(int i = 0; i < 8; i++)
+    {
+        if(input_name[i] == 0x20)
+            break;
+        output_name[i] = tolower(input_name[i]);
+    }
     
     if(input_name[8] != 0x20
         || input_name[9] != 0x20
         || input_name[10] != 0x20)
     {
-        strncpy(output_name + 8, ".", 1);
-        memcpy(output_name + 9, input_name + 8, 3);
+        strncat(output_name, ".\0", 2);
+        
+        for(int i = 0; i < 3; i++)
+        {
+            u8 c = tolower(input_name[i + 8]);
+            strncat(output_name, &c, 1);
+        }
     }
 }
 
