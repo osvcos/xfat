@@ -12,6 +12,8 @@ typedef struct {
 
 s32 open_device(const char* dev);
 u32 get_cluster_size();
+u32 get_data_cluster_count();
+u32 get_free_clusters_count();
 s32 get_next_entry(u32 fat_index, fat_entry *fe);
 u32 get_root_cluster();
 s32 read_cluster(u32 cluster_number, u64 offset, void *data, u32 size);

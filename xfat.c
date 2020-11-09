@@ -19,6 +19,8 @@ static u64 data_region_offset;
 static u32 cluster_size;
 static u32 root_cluster;
 static u32 backup_boot_sector_cluster;
+static u32 cluster_count;
+static u32 free_clusters;
 
 static u32 is_forbidden_char(u8 c)
 {
@@ -75,10 +77,13 @@ s32 open_device(const char* dev)
 {
     CBPB common_bpb;
     FAT32BPB fat32_bpb;
+    FSINFO fsi;
     u16 fat_in_use = 0;
+    u32 data_sectors = 0;
 
     memset(&common_bpb, 0, sizeof(CBPB));
     memset(&fat32_bpb, 0, sizeof(FAT32BPB));
+    memset(&fsi, 0, sizeof(FSINFO));
 
     fd = open(dev, O_RDWR | O_SYNC | O_RSYNC);
 
@@ -91,6 +96,10 @@ s32 open_device(const char* dev)
     if(pread(fd, &fat32_bpb, sizeof(FAT32BPB), sizeof(CBPB)) == -1)
         return -1;
 
+    if(pread(fd, &fsi, sizeof(FSINFO), sizeof(CBPB)
+            + sizeof(FAT32BPB)) == -1)
+        return -1;
+    
     if(fat32_bpb.ext_flags & 0x0080)
         fat_in_use = (fat32_bpb.ext_flags & 0x000F);
 
@@ -102,9 +111,20 @@ s32 open_device(const char* dev)
     data_region_offset = (common_bpb.reserved_sectors * bytes_per_sector)
         + ((fat32_bpb.fat_size_32 * bytes_per_sector) * common_bpb.fat_count);
 
+    data_sectors = common_bpb.total_sectors_32 - common_bpb.reserved_sectors
+        - (fat32_bpb.fat_size_32 * common_bpb.fat_count);
+    
     cluster_size = bytes_per_sector * common_bpb.sectors_per_cluster;
     root_cluster = fat32_bpb.root_cluster;
     backup_boot_sector_cluster = fat32_bpb.boot_sector_copy;
+    cluster_count = data_sectors / common_bpb.sectors_per_cluster;
+    
+    printf("open_device: fsi.free_cluster_count = %u\n", fsi.free_cluster_count);
+    
+    if(fsi.free_cluster_count == 0xFFFFFFFF)
+        free_clusters = 0;
+    else
+        free_clusters = fsi.free_cluster_count;
 
     return 0;
 }
@@ -112,6 +132,16 @@ s32 open_device(const char* dev)
 u32 get_cluster_size()
 {
     return cluster_size;
+}
+
+u32 get_data_cluster_count()
+{
+    return cluster_count;
+}
+
+u32 get_free_clusters_count()
+{
+    return free_clusters;
 }
 
 s32 get_next_entry(u32 fat_index, fat_entry *fe)

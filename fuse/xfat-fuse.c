@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/statvfs.h>
 #include <unistd.h>
 
 #include "directory.h"
@@ -196,12 +197,28 @@ static int xfat_open(const char *path, struct fuse_file_info *fi)
     return 0;
 }
 
+static int xfat_statfs(const char *path, struct statvfs *stvfs)
+{
+    memset(stvfs, 0, sizeof(struct statvfs));
+    
+    printf("xfat_statfs(path=%s)\n", path);
+    
+    stvfs->f_bsize  = get_cluster_size();
+    stvfs->f_frsize = get_cluster_size();
+    stvfs->f_blocks = get_data_cluster_count();
+    stvfs->f_bfree  = get_free_clusters_count();
+    stvfs->f_bavail = get_free_clusters_count();
+    
+    return 0;
+}
+
 static struct fuse_operations xfat_ops = {
     .destroy  = xfat_destroy,
     .readdir  = xfat_readdir,
     .getattr  = xfat_getattr,
     .read     = xfat_read,
-    .open     = xfat_open
+    .open     = xfat_open,
+    .statfs   = xfat_statfs
 };
 
 int main(int argc, char *argv[])
