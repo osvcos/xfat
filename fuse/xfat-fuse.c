@@ -223,6 +223,8 @@ static struct fuse_operations xfat_ops = {
 
 int main(int argc, char *argv[])
 {
+    char noptions[500];
+    char dev_realpath[300];
 #ifndef DEBUG
     int nargc = 4;
     char *nargv[4];
@@ -232,11 +234,15 @@ int main(int argc, char *argv[])
 #endif
     
     char *option = "-o";
-    char *options = "allow_other";
+    char *options = "allow_other,fsname=";
 #ifdef DEBUG
     char *opt_debug = "-o";
     char *debug = "-f";
 #endif
+    
+    memset(noptions, 0, sizeof(noptions));
+    memset(dev_realpath, 0, sizeof(dev_realpath));
+    strncpy(noptions, options, strnlen(options, sizeof(noptions)));
     
     if(argc != 3)
     {
@@ -252,7 +258,6 @@ int main(int argc, char *argv[])
     
     nargv[0] = argv[0];
     nargv[1] = option;
-    nargv[2] = options;
 #ifdef DEBUG
     nargv[3] = opt_debug;
     nargv[4] = debug;
@@ -260,6 +265,9 @@ int main(int argc, char *argv[])
 #else
     nargv[3] = argv[2];
 #endif
+    realpath(argv[1], dev_realpath);
+    strncat(noptions, dev_realpath, sizeof(dev_realpath));
+    nargv[2] = noptions;
     
     return fuse_main(nargc, nargv, &xfat_ops, NULL);
 }
