@@ -62,7 +62,7 @@ s32 get_tm(u16 date_field, u16 time_field, struct tm *tms)
     if(time == 0)
         return 0;
     
-    tms->tm_sec  = time_field & 0x001F;
+    tms->tm_sec  = ((time_field & 0x001F) * 2);
     tms->tm_min  = ((time_field & 0x07E0) >> 5);
     tms->tm_hour = ((time_field & 0xF800) >> 11);
     
