@@ -53,6 +53,7 @@ s32 get_directory_entry(u32 *cluster_number, dir_info *di, u32 *offset)
     fat_entry fe;
     lfn_entry lfn;
     names *lfns = NULL;
+    names *temp_lfns = NULL;
     u32 lfn_count = 0;
     
     lfns = malloc(0);
@@ -67,6 +68,7 @@ s32 get_directory_entry(u32 *cluster_number, dir_info *di, u32 *offset)
     if((*offset % sizeof(Directory)) != 0)
     {
         printf("get_directory_entry: position not aligned\n");
+        free(lfns);
         return -1;
     }
 
@@ -74,6 +76,7 @@ next_cluster:
     if(get_next_entry(*cluster_number, &fe) == -1)
     {
         printf("get_directory_entry: could not get next fat entry\n");
+        free(lfns);
         return -1;
     }
 
@@ -83,6 +86,7 @@ read_cluster:
         if(fe.next_entry == 0x0FFFFFF8)
         {
             printf("get_directory_entry: reached end of directory\n");
+            free(lfns);
             return -1;
         }
 
@@ -98,7 +102,7 @@ read_cluster:
     if(di->dir.name[0] == 0x00)
     {
         printf("get_directory_entry: end of directory\n");
-
+        free(lfns);
         *offset = 0;
         return -1;
     }
@@ -107,8 +111,15 @@ read_cluster:
     {
         memcpy(&lfn, &di->dir, sizeof(lfn_entry));
         
-        lfns = realloc(lfns, (sizeof(names) * (lfn_count + 1)));
+        temp_lfns = realloc(lfns, (sizeof(names) * (lfn_count + 1)));
         
+        if(temp_lfns == NULL)
+        {
+            printf("get_directory_entry: temp_lfns = NULL\n");
+            return -1;
+        }
+        
+        lfns = temp_lfns;
         memset(lfns[lfn_count].name1, 0, 6);
         memset(lfns[lfn_count].name2, 0, 7);
         memset(lfns[lfn_count].name3, 0, 3);
