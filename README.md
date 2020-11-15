@@ -12,7 +12,17 @@ To build the FUSE interface:
 
     make fuse
 
-## Usage of the FUSE interface
+## The FUSE interface
+
+xfat comes with xfat-fuse, a program that uses both the libxfat and libfuse to create an utility that mounts a block device to the specified mountpoint, just like the traditional mount would do. Currently, the FUSE interface is capable of:
+
+* Mount a file/block device
+* List the contents of the root directory
+* Traverse over the filesystem tree
+* Read files
+* Provide filesystem information (filesystem size, available size, block size)
+
+In order to use it, just type>
 
     xfat-fuse <device> <mountpoint>
     
@@ -20,7 +30,7 @@ For example:
 
     xfat-fuse /dev/sdd1 /mnt
     
-You might need to specify the location of libxfat. To do so, you can use the LD_LIBRARY_PATH environment variable:
+You will need to specify the location of libxfat. To do so, you can use the LD_LIBRARY_PATH environment variable:
 
     LD_LIBRARY_PATH=/path/to/libxfat.so xfat-fuse /dev/sdd1 /mnt
 
