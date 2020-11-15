@@ -132,7 +132,7 @@ u32 get_cluster_size()
     return cluster_size;
 }
 
-u32 get_data_cluster_count()
+u32 get_data_clusters_count()
 {
     return cluster_count;
 }

@@ -205,7 +205,7 @@ static int xfat_statfs(const char *path, struct statvfs *stvfs)
     
     stvfs->f_bsize  = get_cluster_size();
     stvfs->f_frsize = get_cluster_size();
-    stvfs->f_blocks = get_data_cluster_count();
+    stvfs->f_blocks = get_data_clusters_count();
     stvfs->f_bfree  = get_free_clusters_count();
     stvfs->f_bavail = get_free_clusters_count();
     
