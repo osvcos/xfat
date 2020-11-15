@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
     
     memset(noptions, 0, sizeof(noptions));
     memset(dev_realpath, 0, sizeof(dev_realpath));
-    strncpy(noptions, options, strnlen(options, sizeof(noptions)));
+    strncpy(noptions, options, sizeof(noptions));
     
     if(argc != 3)
     {
