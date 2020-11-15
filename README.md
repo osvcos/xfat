@@ -20,9 +20,11 @@ xfat comes with xfat-fuse, a program that uses both the libxfat and libfuse to c
 * List the contents of the root directory
 * Traverse over the filesystem tree
 * Read files
+* Provide date/time information for files/directories
+* Display filenames in the long filename format (LFN)
 * Provide filesystem information (filesystem size, available size, block size)
 
-In order to use it, just type>
+In order to use it, just type:
 
     xfat-fuse <device> <mountpoint>
     
