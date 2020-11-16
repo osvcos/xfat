@@ -1,5 +1,3 @@
-#define FUSE_USE_VERSION 31
-
 #include <errno.h>
 #include <fuse.h>
 #include <stdlib.h>
@@ -126,7 +124,7 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
     if(lookup_entry(path, &starting_cluster, &di) == -1)
         return -ENOENT;
         
-    current_cluster = get_cluster32(di.dir.first_clus_hi, di.dir.first_clus_low);
+    current_cluster = di.cluster32;
     
     printf("xfat_read: found %s, start cluster is %u\n", di.long_name, current_cluster);
     

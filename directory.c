@@ -146,7 +146,10 @@ read_cluster:
         prettify_83_name(di->dir.name, di->long_name);
     
     printf("get_directory_entry: final lfn %s\n", di->long_name);
-    
+
+    di->cluster32 = (di->dir.first_clus_hi << 16)
+        | di->dir.first_clus_low;
+
     *offset += sizeof(Directory);
     free(lfns);
     return 0;

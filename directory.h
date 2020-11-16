@@ -45,7 +45,8 @@ typedef struct __attribute__((packed)) {
 } lfn_entry;
 
 typedef struct {
-    u8 long_name[MAX_LFN_LENGTH];
+    u8  long_name[MAX_LFN_LENGTH];
+    u32 cluster32;
     Directory dir;
 } dir_info;
 

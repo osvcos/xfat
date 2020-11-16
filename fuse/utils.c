@@ -9,11 +9,6 @@
 #include "utils.h"
 #include "xfat.h"
 
-u32 get_cluster32(u16 hi, u16 low)
-{
-    return ((hi << 16) | low);
-}
-
 s32 get_stat_from_directory(Directory *dir, struct stat *st)
 {
     struct tm tm_atime;
@@ -72,8 +67,7 @@ s32 lookup_entry(const char *path, u32 *starting_cluster, dir_info *di)
             {
                 printf("lookup_entry: found %s\n", token);
                 
-                current_cluster = get_cluster32(dinfo.dir.first_clus_hi,
-                                                dinfo.dir.first_clus_low);
+                current_cluster = dinfo.cluster32;
                 offset = 0;
                 token = strtok_r(NULL, "/", &intbuff);
                 
