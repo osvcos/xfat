@@ -12,7 +12,7 @@ typedef struct {
     u8 name3[3];
 } names;
 
-static s32 prettify_83_name(u8 *input_name, u8 *output_name)
+static void prettify_83_name(u8 *input_name, u8 *output_name)
 {
     for(int i = 0; i < 8; i++)
     {

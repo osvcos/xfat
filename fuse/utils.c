@@ -9,12 +9,11 @@
 #include "utils.h"
 #include "xfat.h"
 
-s32 get_stat_from_directory(Directory *dir, struct stat *st)
+void get_stat_from_directory(Directory *dir, struct stat *st)
 {
     struct tm tm_atime;
     struct tm tm_mtime;
     
-    memset(st, 0, sizeof(struct stat));
     memset(&tm_atime, 0, sizeof(struct tm));
     memset(&tm_mtime, 0, sizeof(struct tm));
     
@@ -34,8 +33,6 @@ s32 get_stat_from_directory(Directory *dir, struct stat *st)
     
     st->st_atime = mktime(&tm_atime);
     st->st_mtime = mktime(&tm_mtime);
-    
-    return 0;
 }
 
 s32 lookup_entry(const char *path, u32 *starting_cluster, dir_info *di)
@@ -43,7 +40,7 @@ s32 lookup_entry(const char *path, u32 *starting_cluster, dir_info *di)
     char *new_path      = NULL;
     u32 current_cluster = get_root_cluster();
     u32 offset          = 0;
-    u32 ret             = 0;
+    s32 ret             = 0;
     char *token         = NULL;
     char *intbuff       = NULL;
     dir_info dinfo;
@@ -61,8 +58,6 @@ s32 lookup_entry(const char *path, u32 *starting_cluster, dir_info *di)
         
         while(get_directory_entry(&current_cluster, &dinfo, &offset) != -1)
         {
-            printf("lookup_entry: dinfo.long_name = %s\n", dinfo.long_name);
-            
             if(strncmp(token, dinfo.long_name, MAX_LFN_LENGTH) == 0)
             {
                 printf("lookup_entry: found %s\n", token);
@@ -72,10 +67,7 @@ s32 lookup_entry(const char *path, u32 *starting_cluster, dir_info *di)
                 token = strtok_r(NULL, "/", &intbuff);
                 
                 if(token == NULL)
-                {
-                    ret = 0;
                     goto  leave;
-                }
             }
         }
         
@@ -83,7 +75,6 @@ s32 lookup_entry(const char *path, u32 *starting_cluster, dir_info *di)
         goto leave;
     }
     
-    ret = 0;
 leave:
     free(new_path);
     *starting_cluster = current_cluster;

@@ -66,6 +66,7 @@ static int xfat_getattr(const char *path, struct stat *stbuf)
     dir_info di;
     u32 offset = 0;
     
+    memset(stbuf, 0, sizeof(struct stat));
     memset(&di, 0, sizeof(dir_info));
     
     printf("xfat_getattr(path=%s)\n", path);

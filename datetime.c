@@ -45,7 +45,7 @@ u16 fat_getdate(struct fat_datetime *dt)
     return date;
 }
 
-s32 get_tm(u16 date_field, u16 time_field, struct tm *tms)
+void get_tm(u16 date_field, u16 time_field, struct tm *tms)
 {
     struct tm tm_struct;
     time_t raw;
@@ -60,7 +60,7 @@ s32 get_tm(u16 date_field, u16 time_field, struct tm *tms)
     tms->tm_year = (((date_field & 0xFE00) >> 9) + 80);
     
     if(time == 0)
-        return 0;
+        return;
     
     tms->tm_sec  = ((time_field & 0x001F) * 2);
     tms->tm_min  = ((time_field & 0x07E0) >> 5);
@@ -68,6 +68,4 @@ s32 get_tm(u16 date_field, u16 time_field, struct tm *tms)
     
     if(tm_struct.tm_isdst)
         tms->tm_hour -= 1;
-    
-    return 0;
 }
