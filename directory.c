@@ -383,11 +383,14 @@ void validate_83_name(const u8 *input_name, u32 input_name_size, u8 *output_name
 
     for(s32 i = 0; i < input_name_size; i++)
     {
-        if(islower(input_name[i]))
-            new_name[i] = toupper(input_name[i]);
-
         if(is_forbidden_char(input_name[i]))
+        {
             new_name[i] = 0x20;
+            continue;
+        }
+        
+        new_name[i] = (islower(input_name[i])) ? toupper(input_name[i])
+            : input_name[i];
     }
 
     memcpy(output_name, new_name, 11);
