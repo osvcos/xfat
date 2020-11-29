@@ -21,109 +21,34 @@ static u32 root_cluster;
 static u32 backup_boot_sector_cluster;
 static u32 cluster_count;
 static u32 free_clusters;
+static u32 next_free_cluster;
+static u8  is_mirroring_enabled;
+static u8  number_of_fats;
+static u32 fat_size_32;
+static u32 fsi_sector;
 
-static u32 is_forbidden_char(u8 c)
+void close_device()
 {
-    u8 forbidden_chars[] = {
-        0x22, 0x2a, 0x2b, 0x2c,
-        0x2e, 0x2f, 0x3a, 0x3b,
-        0x3c, 0x3d, 0x3e, 0x3f,
-        0x5b, 0x5c, 0x5d, 0x7c
-    };
-    u32 low  = 0;
-    u32 high = sizeof(forbidden_chars) - 1;
-    u32 mid  = 0;
-
-    while(low <= high)
-    {
-        mid = (low + ((high - low) / 2));
-
-        if(forbidden_chars[mid] > c)
-        {
-            high = mid - 1;
-            continue;
-        }
-        if(forbidden_chars[mid] < c)
-        {
-            low = mid + 1;
-            continue;
-        }
-        if(forbidden_chars[mid] == c)
-            return 1;
-    }
-
-    return 0;
+	close(fd);
 }
 
-static void validate_83_name(const u8 *input_name, u32 input_name_size, u8 *output_name)
+s32  find_free_fat_entry(u32 *free_entry)
 {
-    u8  new_name[11];
-
-    memset(new_name, 0x20, 11);
-
-    for(s32 i = 0; i < input_name_size; i++)
+    u64 fat_offset = fat_region_offset + 8;
+    u64 current_offset = fat_offset;
+    u32 current_entry = 0;
+    
+    do
     {
-        if(islower(input_name[i]))
-            new_name[i] = toupper(input_name[i]);
-
-        if(is_forbidden_char(input_name[i]))
-            new_name[i] = 0x20;
+        if(pread(fd, &current_entry, 4, current_offset) == -1)
+            return -1;
+        
+        current_offset += 4;
     }
-
-    memcpy(output_name, new_name, 11);
-}
-
-s32 open_device(const char* dev)
-{
-    CBPB common_bpb;
-    FAT32BPB fat32_bpb;
-    FSINFO fsi;
-    u16 fat_in_use = 0;
-    u32 data_sectors = 0;
-
-    memset(&common_bpb, 0, sizeof(CBPB));
-    memset(&fat32_bpb, 0, sizeof(FAT32BPB));
-    memset(&fsi, 0, sizeof(FSINFO));
-
-    fd = open(dev, O_RDWR | O_SYNC | O_RSYNC);
-
-    if(fd < 0)
-        return -1;
-
-    if(pread(fd, &common_bpb, sizeof(CBPB), 0) == -1)
-        return -1;
-
-    if(pread(fd, &fat32_bpb, sizeof(FAT32BPB), sizeof(CBPB)) == -1)
-        return -1;
-
-    if(pread(fd, &fsi, sizeof(FSINFO), sizeof(CBPB)
-            + sizeof(FAT32BPB)) == -1)
-        return -1;
+    while(current_entry != 0);
     
-    if(fat32_bpb.ext_flags & 0x0080)
-        fat_in_use = (fat32_bpb.ext_flags & 0x000F);
-
-    bytes_per_sector = common_bpb.bytes_per_sector;
-
-    fat_region_offset = (common_bpb.reserved_sectors * bytes_per_sector)
-        + (fat_in_use * fat32_bpb.fat_size_32 * bytes_per_sector * common_bpb.fat_count);
-
-    data_region_offset = (common_bpb.reserved_sectors * bytes_per_sector)
-        + ((fat32_bpb.fat_size_32 * bytes_per_sector) * common_bpb.fat_count);
-
-    data_sectors = common_bpb.total_sectors_32 - common_bpb.reserved_sectors
-        - (fat32_bpb.fat_size_32 * common_bpb.fat_count);
+    *free_entry = ((current_offset - fat_offset) / 4) + 1;
     
-    cluster_size = bytes_per_sector * common_bpb.sectors_per_cluster;
-    root_cluster = fat32_bpb.root_cluster;
-    backup_boot_sector_cluster = fat32_bpb.boot_sector_copy;
-    cluster_count = data_sectors / common_bpb.sectors_per_cluster;
-    
-    if(fsi.free_cluster_count == 0xFFFFFFFF)
-        free_clusters = 0;
-    else
-        free_clusters = fsi.free_cluster_count;
-
     return 0;
 }
 
@@ -165,6 +90,85 @@ u32 get_root_cluster()
     return root_cluster;
 }
 
+s32 open_device(const char* dev)
+{
+    CBPB common_bpb;
+    FAT32BPB fat32_bpb;
+    FSINFO fsi;
+    u16 fat_in_use = 0;
+    u32 data_sectors = 0;
+
+    memset(&common_bpb, 0, sizeof(CBPB));
+    memset(&fat32_bpb, 0, sizeof(FAT32BPB));
+    memset(&fsi, 0, sizeof(FSINFO));
+
+    fd = open(dev, O_RDWR | O_SYNC | O_RSYNC);
+
+    if(fd < 0)
+        return -1;
+
+    if(pread(fd, &common_bpb, sizeof(CBPB), 0) == -1)
+        return -1;
+
+    if(pread(fd, &fat32_bpb, sizeof(FAT32BPB), sizeof(CBPB)) == -1)
+        return -1;
+
+    if(pread(fd, &fsi, sizeof(FSINFO), sizeof(CBPB)
+            + sizeof(FAT32BPB)) == -1)
+        return -1;
+    
+    bytes_per_sector = common_bpb.bytes_per_sector;
+    
+    if(fat32_bpb.ext_flags & 0x0080)
+    {
+        is_mirroring_enabled = 0;
+        printf("open_device: mirroring is disabled\n");
+        fat_in_use = (fat32_bpb.ext_flags & 0x000F);
+        printf("open_device: using fat %u\n", fat_in_use);
+    }
+    else
+    {
+        is_mirroring_enabled = 1;
+        printf("open_device: mirroring is enabled\n");
+    }
+
+    fat_region_offset = (common_bpb.reserved_sectors * bytes_per_sector)
+        + (fat_in_use * fat32_bpb.fat_size_32 * bytes_per_sector);
+
+    data_region_offset = (common_bpb.reserved_sectors * bytes_per_sector)
+        + ((fat32_bpb.fat_size_32 * bytes_per_sector) * common_bpb.fat_count);
+
+    fat_size_32 = fat32_bpb.fat_size_32;
+    
+    number_of_fats = common_bpb.fat_count;
+    
+    data_sectors = common_bpb.total_sectors_32 - common_bpb.reserved_sectors
+        - (fat32_bpb.fat_size_32 * common_bpb.fat_count);
+    
+    cluster_size = bytes_per_sector * common_bpb.sectors_per_cluster;
+    root_cluster = fat32_bpb.root_cluster;
+    backup_boot_sector_cluster = fat32_bpb.boot_sector_copy;
+    fsi_sector = fat32_bpb.fs_info_cluster;
+    cluster_count = data_sectors / common_bpb.sectors_per_cluster;
+    
+    read_fsi();
+
+    return 0;
+}
+
+s32  read_fsi()
+{
+    FSINFO fsi;
+    
+    memset(&fsi, 0, sizeof(FSINFO));
+    
+    if(pread(fd, &fsi, sizeof(FSINFO), bytes_per_sector) == -1)
+        return -1;
+    
+    free_clusters = (fsi.free_cluster_count == 0xFFFFFFFF) ? 0 : fsi.free_cluster_count;
+    next_free_cluster = (fsi.first_free_cluster == 0xFFFFFFFF) ? 0 : fsi.first_free_cluster;
+}
+
 s32 read_cluster(u32 cluster_number, u64 offset, void *data, u32 size)
 {
     fat_entry fe;
@@ -199,50 +203,149 @@ s32 read_cluster(u32 cluster_number, u64 offset, void *data, u32 size)
 
 s32 set_label(const char* label)
 {
-    fat_entry fe;
-    u32 label_offset = 0;
+    u8  new_label[11];
+    u32 start_cluster = get_root_cluster();
+    u32 offset = 0;
+    u16 current_date = 0;
+    u16 current_time = 0;
     Directory dir;
+    dir_info di;
     struct fat_datetime dt;
-    u8 new_label[11];
-
-    memset(&dir, 0, sizeof(Directory));
-    memset(&fe, 0, sizeof(fat_entry));
-    memset(&dt, 0, sizeof(struct fat_datetime));
-    memset(new_label, 0, 11);
-
-    validate_83_name(label, strnlen(label, 11), new_label);
-
-    if(get_next_entry(root_cluster, &fe) == -1)
-        return -1;
     
-    if(pread(fd, &dir, sizeof(Directory), fe.data_offset) == -1)
-        return -1;
+    memset(new_label, 0, sizeof(new_label));
+    memset(&dir, 0, sizeof(Directory));
+    memset(&dt, 0, sizeof(struct fat_datetime));
+    memset(&di, 0, sizeof(dir_info));
+    
+    validate_83_name(label, strnlen(label, 11), new_label);
     
     if(fat_getdatetime(&dt) == -1)
         return -1;
     
-    memcpy(dir.name, new_label, 11);
+    current_date = fat_getdate(&dt);
+    current_time = fat_gettime(&dt);
     
-    if(dir.attributes != ATTR_VOLUME_ID)
+    if(write_to_bootsector(sizeof(CBPB) + offsetof(FAT32BPB, volume_label),
+        new_label, 11) == -1)
     {
-        dir.attributes = ATTR_VOLUME_ID;
-        dir.creation_time = fat_gettime(&dt);
-        dir.creation_date = fat_getdate(&dt);
+        printf("set_label: could not write label to bootsector\n");
+        return -1;
     }
     
-    dir.last_access_date = fat_getdate(&dt);
-    dir.last_mod_date    = fat_getdate(&dt);
-    dir.last_mod_time = fat_gettime(&dt);
+    while(get_directory_entry(&start_cluster, &di, &offset) != -1)
+    {
+        if(di.dir.attributes == ATTR_VOLUME_ID)
+        {
+            if(write_to_cluster(start_cluster,
+                offset - 32, new_label, 11) == -1)
+            {
+                printf("set_label: could not write label to directory\n");
+                return -1;
+            }
+            
+            if(write_to_cluster(start_cluster,
+                offset + offsetof(Directory, last_mod_time),
+                &current_time, 2) == -1)
+            {
+                printf("set_label: could not set last modification time\n");
+                return -1;
+            }
+            
+            if(write_to_cluster(start_cluster,
+                offset + offsetof(Directory, last_mod_date),
+                &current_date, 2) == -1)
+            {
+                printf("set_label: could not set last modification date\n");
+                return -1;
+            }
+            
+            return 0;
+        }
+    }
     
-    label_offset = sizeof(CBPB) + offsetof(FAT32BPB, volume_label);
-
-    if(write_to_bootsector(label_offset, new_label, 11) == -1)
-        return -1;
-
-    if(pwrite(fd, &dir, sizeof(Directory), fe.data_offset) == -1)
+    dir.attributes = ATTR_VOLUME_ID;
+    strncpy(dir.name, new_label, 11);
+    dir.last_mod_time = current_time;
+    dir.last_mod_date = current_date;
+    dir.creation_time = current_time;
+    dir.creation_date = current_date;
+    dir.last_access_date = current_date;
+    
+    if(allocate_directory(get_root_cluster(), &dir) == -1)
         return -1;
     
-	return 0;
+    return 0;
+}
+
+s32  write_to_cluster(u32 cluster_number, u64 offset, void *data, u32 size)
+{
+    printf("write_to_cluster(cluster_number=%u, offset=%lu, size=%u)\n", cluster_number,
+           offset, size);
+    /*
+     * TODO: Handle cluster expansion, and a lot more...
+     */
+    fat_entry fe;
+    u64       end_of_cluster = 0;
+    
+    memset(&fe, 0, sizeof(fat_entry));
+    
+    if(get_next_entry(cluster_number, &fe) == -1)
+    {
+        printf("write_to_cluster: could not get next entry for cluster %u\n",
+               cluster_number);
+        return -1;
+    }
+    
+    end_of_cluster = fe.data_offset + cluster_size;
+    
+    if((fe.data_offset + offset + size) > end_of_cluster)
+    {
+        printf("write_to_cluster: cannot exceed cluster boundary\n");
+        return -1;
+    }
+    
+    if(pwrite(fd, data, size, fe.data_offset + offset) == -1)
+    {
+        printf("write_to_cluster: failed to write to cluster\n");
+        return -1;
+    }
+    
+    return 0;
+}
+
+s32 write_to_fat_entry(u32 fat_index, u32 new_value)
+{
+    u32 write_times = 1;
+    
+    if(is_mirroring_enabled)
+        write_times = number_of_fats;
+    
+    for(u32 i = 0; i < write_times; i++)
+    {
+        u64 offset = (fat_region_offset + (i * (fat_size_32 * bytes_per_sector)))
+            + (4ULL * fat_index);
+        
+        if(pwrite(fd, &new_value, sizeof(u32), offset) == -1)
+        {
+            printf("write_to_fat_entry: error writing to FAT\n");
+            return -1;
+        }
+    }
+    return  0;
+}
+
+s32  write_to_fsi(u64 offset, const void* data, u32 size)
+{
+    u64 pri_offset = fsi_sector * bytes_per_sector;
+    u64 bak_offset = 7ULL * bytes_per_sector;
+    
+    if(pwrite(fd, data, size, pri_offset + offset) == -1)
+        return -1;
+    
+    if(pwrite(fd, data, size, bak_offset + offset) == -1)
+        return -1;
+    
+    return 0;
 }
 
 s32 write_to_bootsector(u32 offset, const void* data, u32 size)
@@ -258,9 +361,4 @@ s32 write_to_bootsector(u32 offset, const void* data, u32 size)
         retval = -1;
     
     return retval;
-}
-
-void close_device()
-{
-	close(fd);
 }

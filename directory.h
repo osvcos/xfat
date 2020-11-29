@@ -50,6 +50,8 @@ typedef struct {
     Directory dir;
 } dir_info;
 
-s32 get_directory_entry(u32 *cluster_number, dir_info *di, u32 *offset);
+s32  allocate_directory(u32 directory_cluster, Directory *dir);
+s32  get_directory_entry(u32 *cluster_number, dir_info *di, u32 *offset);
+void validate_83_name(const u8 *input_name, u32 input_name_size, u8 *output_name);
 
 #endif

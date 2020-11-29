@@ -4,7 +4,8 @@ LDFLAGS := -L../ -lxfat
 FATLABEL_OBJECTS := fatlabel.o
 LSROOT_OBJECTS := lsroot.o
 LSROOT2_OBJECTS := lsroot2.o
-TESTS := fatlabel lsroot lsroot2
+MKDIR_OBJECTS := mkdir.o
+TESTS := fatlabel lsroot lsroot2 mkdir
 
 all: xfat $(TESTS)
 .PHONY: all
@@ -20,6 +21,10 @@ lsroot: $(LSROOT_OBJECTS)
 
 lsroot2: $(LSROOT2_OBJECTS)
 	$(CC) $(LDFLAGS) $< -o $@
+
+mkdir: $(MKDIR_OBJECTS)
+	$(CC) $(LDFLAGS) $< -o $@
+
 %.o: %.c
 	$(CC) $(CCFLAGS) -c $<
 
