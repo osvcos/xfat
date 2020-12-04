@@ -5,7 +5,8 @@ FATLABEL_OBJECTS := fatlabel.o
 LSROOT_OBJECTS := lsroot.o
 LSROOT2_OBJECTS := lsroot2.o
 MKDIR_OBJECTS := mkdir.o
-TESTS := fatlabel lsroot lsroot2 mkdir
+DATETIME_OBJECTS := datetime.o
+TESTS := fatlabel lsroot lsroot2 mkdir datetime
 
 all: xfat $(TESTS)
 .PHONY: all
@@ -23,6 +24,9 @@ lsroot2: $(LSROOT2_OBJECTS)
 	$(CC) $(LDFLAGS) $< -o $@
 
 mkdir: $(MKDIR_OBJECTS)
+	$(CC) $(LDFLAGS) $< -o $@
+
+datetime: $(DATETIME_OBJECTS)
 	$(CC) $(LDFLAGS) $< -o $@
 
 %.o: %.c
