@@ -6,7 +6,7 @@
 
 #include "datetime.h"
 #include "directory.h"
-#include "reserved.h"
+#include "superblock.h"
 #include "xfat.h"
 
 typedef struct {

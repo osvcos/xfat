@@ -8,7 +8,7 @@
 
 #include "datetime.h"
 #include "directory.h"
-#include "reserved.h"
+#include "superblock.h"
 #include "xfat.h"
 
 static s32 fd;
