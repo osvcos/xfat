@@ -287,7 +287,7 @@ s32 get_directory_entry(u32 *cluster_number, dir_info *di, u32 *offset)
      */
     if((*offset % sizeof(Directory)) != 0)
     {
-        printf("get_directory_entry: position not aligned\n");
+        printf("get_directory_entry: offset not aligned\n");
         free(lfns);
         return -1;
     }
