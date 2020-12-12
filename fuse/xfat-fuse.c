@@ -73,20 +73,20 @@ static int xfat_getattr(const char *path, struct stat *stbuf)
     
     if(strncmp(path, "/\0", 2) == 0)
     {
-        get_directory_entry(&starting_cluster, &di, &offset);
-        
-        if(di.dir.attributes == ATTR_VOLUME_ID)
+        while(get_directory_entry(&starting_cluster, &di, 
+                &offset) != -1)
         {
-            get_stat_from_directory(&di.dir, stbuf);
+            if(di.dir.attributes == ATTR_VOLUME_ID)
+            {
+                get_stat_from_directory(&di.dir, stbuf);
+                return 0;
+            }
         }
-        else
-        {
-            stbuf->st_size = 0;
-            stbuf->st_mode = S_IFDIR | 0755;
-            stbuf->st_uid     = getuid();
-            stbuf->st_gid     = getgid();
-        }
-        
+
+        stbuf->st_size = 0;
+        stbuf->st_mode = S_IFDIR | 0755;
+        stbuf->st_uid     = getuid();
+        stbuf->st_gid     = getgid();
         stbuf->st_nlink = 2;
         return 0;
     }
