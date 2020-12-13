@@ -7,6 +7,10 @@
 
 #include "types.h"
 
+/*
+ * The part of the BIOS parameter block common to
+ * all FAT variants
+ */
 typedef struct __attribute__((packed)) {
     u8  jump_boot[3];
     u8  oem_name[8];
@@ -24,6 +28,10 @@ typedef struct __attribute__((packed)) {
     u32 total_sectors_32;
 } CBPB;
 
+/*
+ * The part of thhe BIOS parameter block common to
+ * the FAT32 filesystem.
+ */
 typedef struct __attribute__((packed)) {
     u32 fat_size_32;
     u16 ext_flags;
@@ -42,6 +50,9 @@ typedef struct __attribute__((packed)) {
     u16 signature;
 } FAT32BPB;
 
+/*
+ * The File System Information Structure
+ */
 typedef struct __attribute__((packed)) {
     u32 lead_signature;
     u8  reserved1[480];
