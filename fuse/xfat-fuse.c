@@ -148,9 +148,9 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
         }
         
         current_cluster = next.next_entry;
-        
-        printf("xfat_read: changed to cluster %d\n", current_cluster);
     }
+    
+    printf("xfat_read: current cluster is %u\n", current_cluster);
     
     while(current_size >= 1)
     {
@@ -161,28 +161,30 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
         else
             bytes_to_read = current_size;
 
-        current_size -= bytes_to_read;
-
         if(read_cluster(current_cluster, offset_left, buf + bytes_read, bytes_to_read) == -1)
         {
             printf("xfat_read: could not read data\n");
             return 0;
         }
 
-        printf("xfat_read: changing cluster\n");
-        printf("xfat_read: current_cluster = %u\n", current_cluster);
-
-        if(get_next_entry(current_cluster, &next) == -1)
+        if(current_size > get_cluster_size())
         {
-            printf("xfat_read: error while changing fat entry\n");
-            return 0;
+            printf("xfat_read: changing cluster\n");
+            printf("xfat_read: current_cluster = %u\n", current_cluster);
+
+            if(get_next_entry(current_cluster, &next) == -1)
+            {
+                printf("xfat_read: error while changing fat entry\n");
+                return 0;
+            }
+            
+            current_cluster = next.next_entry;
+
+            printf("xfat_read: changed to cluster %u\n", current_cluster);
         }
         
-        current_cluster = next.next_entry;
-
-        printf("xfat_read: changed to cluster %u\n", current_cluster);
-
         bytes_read += bytes_to_read;
+        current_size -= bytes_to_read;
         offset_left = 0;
         bytes_to_read = 0;
     }

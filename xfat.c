@@ -176,8 +176,6 @@ s32 read_cluster(u32 cluster_number, u64 offset, void *data, u32 size)
     
     memset(&fe, 0, sizeof(fat_entry));
     
-    printf("read_cluster(cluster_number=%u, offset=%lu, size=%u\n", cluster_number, offset, size);
-    
     if(get_next_entry(cluster_number, &fe) == -1)
         return -1;
 
