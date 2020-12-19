@@ -1,7 +1,7 @@
 CC      := gcc
 LDFLAGS := $(shell pkg-config --libs fuse) -L../ -lxfat
 CFLAGS  := $(shell pkg-config --cflags fuse) -I../ -DFUSE_USE_VERSION=26
-OBJECTS := xfat-fuse.o utils.o
+OBJECTS := xfat-fuse.o utils.o cache.o
 OUTPUT  := xfat-fuse
 
 ifdef DEBUG

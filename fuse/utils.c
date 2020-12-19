@@ -73,7 +73,7 @@ s32 lookup_entry(const char *path, u32 *starting_cluster, dir_info *di)
             }
         }
         
-        printf("%s not found\n", token);
+        printf("lookup_entry: %s not found\n", token);
         ret = -1;
         break;
     }

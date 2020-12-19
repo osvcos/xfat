@@ -6,6 +6,7 @@
 #include <sys/statvfs.h>
 #include <unistd.h>
 
+#include "cache.h"
 #include "directory.h"
 #include "utils.h"
 #include "xfat.h"
@@ -17,6 +18,7 @@ static void usage()
 
 static void xfat_destroy(void *data)
 {
+    cache_destroy();
     close_device();
 }
 
@@ -35,7 +37,7 @@ static int xfat_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     
     if(lookup_entry(path, &starting_cluster, NULL) == -1)
     {
-        printf("xfat_readdir: not found\n");
+        printf("xfat_readdir: %s not found\n", path);
         return -ENOENT;
     }
     
@@ -110,15 +112,18 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
     dir_info di;
     u32 starting_cluster = 0;
     u32 current_cluster = 0;
+    u32 initial_cluster = 0;
     s32 change_times      = 0;
     u32 offset_left       = 0;
     s64 current_size      = size;
     u64 bytes_read        = 0;
     u32 bytes_to_read = 0;
     fat_entry next;
+    cache_entry centry;
     
     memset(&di, 0, sizeof(dir_info));
     memset(&next, 0, sizeof(fat_entry));
+    memset(&centry, 0, sizeof(cache_entry));
     
     printf("xfat_read(path=%s, size=%lu, offset=%lu)\n", path, size, offset);
     
@@ -126,6 +131,7 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
         return -ENOENT;
         
     current_cluster = di.cluster32;
+    initial_cluster = current_cluster;
     
     printf("xfat_read: found %s, start cluster is %u\n", di.long_name, current_cluster);
     
@@ -137,21 +143,29 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
     else
         offset_left = offset;
     
-    printf("xfat_read: change_times=%d, offset_left=%d\n", change_times, offset_left);
-    
-    while(change_times-- > 0)
+    if(cache_lookup(current_cluster, offset, &centry) == 0)
     {
-        if(get_next_entry(current_cluster, &next) == -1)
+        current_cluster = centry.final_cluster;
+    }
+    else
+    {
+        printf("xfat_read: change_times=%d, offset_left=%d\n", change_times, offset_left);
+        
+        while(change_times-- > 0)
         {
-            printf("xfat_read: could not change to next cluster\n");
-            return 0;
+            if(get_next_entry(current_cluster, &next) == -1)
+            {
+                printf("xfat_read: could not change to next cluster\n");
+                return 0;
+            }
+            
+            current_cluster = next.next_entry;
         }
         
-        current_cluster = next.next_entry;
+        printf("xfat_read: current cluster is %u\n", current_cluster);
+        cache_add(initial_cluster, offset, current_cluster);
     }
-    
-    printf("xfat_read: current cluster is %u\n", current_cluster);
-    
+
     while(current_size >= 1)
     {
         printf("xfat_read: current_size = %d\n", current_size);
@@ -269,6 +283,8 @@ int main(int argc, char *argv[])
     realpath(argv[1], dev_realpath);
     strncat(noptions, dev_realpath, sizeof(dev_realpath));
     nargv[2] = noptions;
+    
+    cache_init();
     
     return fuse_main(nargc, nargv, &xfat_ops, NULL);
 }
