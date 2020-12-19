@@ -4,7 +4,7 @@
 
 #include "cache.h"
 
-#define MAX_CACHE_ENTRIES 1000
+#define MAX_CACHE_ENTRIES 2000
 
 #define COMPARE(x, op, y) \
     ((x.initial_cluster op y.initial_cluster) \

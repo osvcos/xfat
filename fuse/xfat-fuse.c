@@ -114,7 +114,7 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
     u32 current_cluster = 0;
     u32 initial_cluster = 0;
     s32 change_times      = 0;
-    u32 offset_left       = 0;
+    u32 offset_left       = offset;
     s64 current_size      = size;
     u64 bytes_read        = 0;
     u32 bytes_to_read = 0;
@@ -140,8 +140,6 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
         change_times = offset / get_cluster_size();
         offset_left  = offset % get_cluster_size();
     }
-    else
-        offset_left = offset;
     
     if(cache_lookup(current_cluster, offset, &centry) == 0)
     {
