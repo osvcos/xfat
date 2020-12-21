@@ -273,8 +273,6 @@ s32 get_directory_entry(u32 *cluster_number, dir_info *di, u32 *offset)
     fat_entry fe;
     lfn_entry lfn;
     names *lfns = NULL;
-    names *temp_lfns = NULL;
-    u32 lfn_count = 0;
     u32 is_first_lfn = 1;
     u32 lfn_entries = 0;
     
