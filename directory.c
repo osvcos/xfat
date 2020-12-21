@@ -10,9 +10,9 @@
 #include "xfat.h"
 
 typedef struct {
-    u8 name1[6];
-    u8 name2[7];
-    u8 name3[3];
+    u8 name1[5];
+    u8 name2[6];
+    u8 name3[2];
 } names;
 
 static u32 is_forbidden_char(u8 c)
@@ -275,8 +275,9 @@ s32 get_directory_entry(u32 *cluster_number, dir_info *di, u32 *offset)
     names *lfns = NULL;
     names *temp_lfns = NULL;
     u32 lfn_count = 0;
+    u32 is_first_lfn = 1;
+    u32 lfn_entries = 0;
     
-    lfns = malloc(0);
     memset(di->long_name, 0, MAX_LFN_LENGTH);
     memset(&fe, 0, sizeof(fat_entry));
     memset(&lfn, 0, sizeof(lfn_entry));
@@ -288,7 +289,6 @@ s32 get_directory_entry(u32 *cluster_number, dir_info *di, u32 *offset)
     if((*offset % sizeof(Directory)) != 0)
     {
         printf("get_directory_entry: offset not aligned\n");
-        free(lfns);
         return -1;
     }
 
@@ -296,7 +296,6 @@ next_cluster:
     if(get_next_entry(*cluster_number, &fe) == -1)
     {
         printf("get_directory_entry: could not get next fat entry\n");
-        free(lfns);
         return -1;
     }
 
@@ -306,7 +305,6 @@ read_cluster:
         if(fe.next_entry == 0x0FFFFFF8)
         {
             printf("get_directory_entry: reached end of directory\n");
-            free(lfns);
             return -1;
         }
 
@@ -322,7 +320,6 @@ read_cluster:
     if(di->dir.name[0] == 0x00)
     {
         printf("get_directory_entry: end of directory\n");
-        free(lfns);
         *offset = 0;
         return -1;
     }
@@ -331,39 +328,32 @@ read_cluster:
     {
         memcpy(&lfn, &di->dir, sizeof(lfn_entry));
         
-        temp_lfns = realloc(lfns, (sizeof(names) * (lfn_count + 1)));
-        
-        if(temp_lfns == NULL)
+        if(is_first_lfn)
         {
-            printf("get_directory_entry: temp_lfns = NULL\n");
-            return -1;
+            lfn_entries = (lfn.ordinal - 0x40) - 1;
+            
+            printf("get_directory_entry: lfn entries: %u\n", lfn_entries);
+            is_first_lfn = 0;
         }
         
-        lfns = temp_lfns;
-        memset(lfns[lfn_count].name1, 0, 6);
-        memset(lfns[lfn_count].name2, 0, 7);
-        memset(lfns[lfn_count].name3, 0, 3);
+        lfns = malloc(sizeof(names));
+        memset(lfns, 0, sizeof(names));
         
-        to_utf8(lfn.name1, 5, lfns[lfn_count].name1);
-        to_utf8(lfn.name2, 6, lfns[lfn_count].name2);
-        to_utf8(lfn.name3, 2, lfns[lfn_count].name3);
+        to_utf8(lfn.name1, 5, lfns->name1);
+        to_utf8(lfn.name2, 6, lfns->name2);
+        to_utf8(lfn.name3, 2, lfns->name3);
 
+        memcpy(di->long_name + (sizeof(names) * lfn_entries--),
+               lfns, sizeof(names));
         *offset += sizeof(Directory);
-        lfn_count += 1;
+        free(lfns);
         goto read_cluster;
     }
-    
-    if(lfn_count != 0)
-    {
-        for(int i = lfn_count - 1; i >= 0; i--)
-        {
-            strncat(di->long_name, lfns[i].name1, 5);
-            strncat(di->long_name, lfns[i].name2, 7);
-            strncat(di->long_name, lfns[i].name3, 3);
-        }
-    }
     else
-        prettify_83_name(di->dir.name, di->long_name);
+    {
+        if(lfn_entries == 0)
+            prettify_83_name(di->dir.name, di->long_name);
+    }
     
     printf("get_directory_entry: final lfn %s\n", di->long_name);
 
@@ -371,7 +361,6 @@ read_cluster:
         | di->dir.first_clus_low;
 
     *offset += sizeof(Directory);
-    free(lfns);
     return 0;
 }
 
