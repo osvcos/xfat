@@ -50,11 +50,13 @@ static u32 is_forbidden_char(u8 c)
 
 static void prettify_83_name(u8 *input_name, u8 *output_name)
 {
-    for(int i = 0; i < 8; i++)
+    u32 name_len = 0;
+    
+    for(name_len = 0; name_len < 8; name_len++)
     {
-        if(input_name[i] == 0x20)
+        if(input_name[name_len] == 0x20)
             break;
-        output_name[i] = input_name[i];
+        output_name[name_len] = input_name[name_len];
     }
     
     if(input_name[8] != 0x20
@@ -70,7 +72,7 @@ static void prettify_83_name(u8 *input_name, u8 *output_name)
             if(c == 0x20)
                 break;
             
-            memcpy(output_name + (i + 8), &c, 1);
+            memcpy(output_name + (i + name_len + 1), &c, 1);
         }
     }
 }
