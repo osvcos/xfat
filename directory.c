@@ -48,7 +48,8 @@ static u32 is_forbidden_char(u8 c)
     return 0;
 }
 
-static void prettify_83_name(u8 *input_name, u8 *output_name)
+static void prettify_83_name(u8 *restrict input_name,
+                             u8 *restrict output_name)
 {
     u32 name_len = 0;
     
@@ -77,7 +78,8 @@ static void prettify_83_name(u8 *input_name, u8 *output_name)
     }
 }
 
-static void to_utf8(u8 *input, u32 osize, u8 *output)
+static void to_utf8(u8 *restrict input, u32 osize,
+                    u8 *restrict output)
 {
     for(int i = 0; i < osize; i ++)
     {
