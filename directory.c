@@ -70,7 +70,7 @@ static void prettify_83_name(u8 *input_name, u8 *output_name)
             if(c == 0x20)
                 break;
             
-            strncat(output_name, &c, 1);
+            memcpy(output_name + (i + 8), &c, 1);
         }
     }
 }
