@@ -23,7 +23,7 @@ void get_stat_from_directory(Directory *dir, struct stat *st)
     
     if(dir->attributes & ATTR_DIRECTORY || dir->attributes == ATTR_VOLUME_ID)
         st->st_mode = S_IFDIR | 0755;
-    if(dir->attributes & ATTR_ARCHIVE)
+    else if(dir->attributes & ATTR_ARCHIVE)
         st->st_mode = S_IFREG | 0644;
     
     st->st_blksize = get_cluster_size();

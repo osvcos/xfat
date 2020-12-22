@@ -50,7 +50,7 @@ static int xfat_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     
     while(get_directory_entry(&starting_cluster, &di, &off) != -1)
     {
-        if(di.dir.attributes == ATTR_VOLUME_ID)
+        if(di.dir.attributes & ATTR_VOLUME_ID)
             continue;
         if(di.dir.name[0] == 0xE5)
             continue;
