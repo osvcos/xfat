@@ -6,7 +6,6 @@
 #include <sys/statvfs.h>
 #include <unistd.h>
 
-#include "cache.h"
 #include "directory.h"
 #include "utils.h"
 #include "xfat.h"
@@ -18,7 +17,6 @@ static void usage()
 
 static void xfat_destroy(void *data)
 {
-    cache_destroy();
     close_device();
 }
 
@@ -119,11 +117,9 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
     u64 bytes_read        = 0;
     u32 bytes_to_read = 0;
     fat_entry next;
-    cache_entry centry;
     
     memset(&di, 0, sizeof(dir_info));
     memset(&next, 0, sizeof(fat_entry));
-    memset(&centry, 0, sizeof(cache_entry));
     
     printf("xfat_read(path=%s, size=%lu, offset=%lu)\n", path, size, offset);
     
@@ -141,28 +137,20 @@ static int xfat_read(const char *path, char *buf, size_t size, off_t offset,
         offset_left  = offset % get_cluster_size();
     }
     
-    if(cache_lookup(current_cluster, offset, &centry) == 0)
-    {
-        current_cluster = centry.final_cluster;
-    }
-    else
-    {
-        printf("xfat_read: change_times=%d, offset_left=%d\n", change_times, offset_left);
+    printf("xfat_read: change_times=%d, offset_left=%d\n", change_times, offset_left);
         
-        while(change_times-- > 0)
+    while(change_times-- > 0)
+    {
+        if(get_next_entry(current_cluster, &next) == -1)
         {
-            if(get_next_entry(current_cluster, &next) == -1)
-            {
-                printf("xfat_read: could not change to next cluster\n");
-                return 0;
-            }
-            
-            current_cluster = next.next_entry;
+            printf("xfat_read: could not change to next cluster\n");
+            return 0;
         }
         
-        printf("xfat_read: current cluster is %u\n", current_cluster);
-        cache_add(initial_cluster, offset, current_cluster);
+        current_cluster = next.next_entry;
     }
+    
+    printf("xfat_read: current cluster is %u\n", current_cluster);
 
     while(current_size >= 1)
     {
@@ -281,8 +269,6 @@ int main(int argc, char *argv[])
     realpath(argv[1], dev_realpath);
     strncat(noptions, dev_realpath, sizeof(dev_realpath));
     nargv[2] = noptions;
-    
-    cache_init();
     
     return fuse_main(nargc, nargv, &xfat_ops, NULL);
 }
