@@ -1,5 +1,5 @@
 XFATLIB_CC      := gcc
-XFATLIB_CFLAGS  := -O3
+XFATLIB_CFLAGS  := -O3 -Iinclude
 XFATLIB_LDFLAGS := -shared
 XFATLIB_OBJS    := xfat.o datetime.o directory.o
 XFATLIB_OUT     := libxfat.so

@@ -1,5 +1,5 @@
 CC      := gcc
-CCFLAGS := -I../
+CCFLAGS := -I../include
 LDFLAGS := -L../ -lxfat
 FATLABEL_OBJECTS := fatlabel.o
 LSROOT_OBJECTS := lsroot.o
