@@ -6,6 +6,7 @@
 
 #include "datetime.h"
 #include "directory.h"
+#include "log.h"
 #include "superblock.h"
 #include "xfat.h"
 
@@ -112,7 +113,7 @@ s32 allocate_directory(u32 directory_cluster, Directory *dir)
         {
             if(get_next_entry(parent_directory_cluster, &next) == -1)
             {
-                printf("allocate_directory: (1) could not get next entry\n");
+                LOG("allocate_directory: (1) could not get next entry\n");
                 return -1;
             }
             
@@ -122,20 +123,20 @@ s32 allocate_directory(u32 directory_cluster, Directory *dir)
                 
                 if(find_free_fat_entry(&next_entry) == -1)
                 {
-                    printf("allocate_directory: (1) could not get next free cluster\n");
+                    LOG("allocate_directory: (1) could not get next free cluster\n");
                     return -1;
                 }
                 
                 if(write_to_fat_entry(parent_directory_cluster, next_entry) == -1)
                 {
-                    printf("allocate_directory: (1) could not write to fat entry %u\n",
+                    LOG("allocate_directory: (1) could not write to fat entry %u\n",
                             parent_directory_cluster);
                     return -1;
                 }
 
                 if(write_to_fat_entry(next_entry, 0xFFFFFF8) == -1)
                 {
-                    printf("allocate_directory: (2) could not write to fat entry %u\n", next_entry);
+                    LOG("allocate_directory: (2) could not write to fat entry %u\n", next_entry);
                     return -1;
                 }
                 
@@ -159,11 +160,11 @@ s32 allocate_directory(u32 directory_cluster, Directory *dir)
             {
                 if(find_free_fat_entry(&this_directory_cluster) == -1)
                 {
-                    printf("allocate_directory: (2) could not get next free cluster\n");
+                    LOG("allocate_directory: (2) could not get next free cluster\n");
                     return -1;
                 }
 
-                printf("allocate_directory: free cluster entry: %u\n", this_directory_cluster);
+                LOG("allocate_directory: free cluster entry: %u\n", this_directory_cluster);
                 
                 if(write_to_fat_entry(this_directory_cluster, 0x0FFFFFFF) == -1)
                     return -1;
@@ -171,7 +172,7 @@ s32 allocate_directory(u32 directory_cluster, Directory *dir)
                 temp_dir.first_clus_hi  = (this_directory_cluster & 0xFFFF0000) >> 16;
                 temp_dir.first_clus_low = (this_directory_cluster & 0x0000FFFF);
                 
-                printf("allocate_directory: clus_hi: %u, clus_lo: %u\n", 
+                LOG("allocate_directory: clus_hi: %u, clus_lo: %u\n", 
                        temp_dir.first_clus_hi, temp_dir.first_clus_low);
                 
                 u32 current_free_clusters_count = get_free_clusters_count();
@@ -184,19 +185,19 @@ s32 allocate_directory(u32 directory_cluster, Directory *dir)
                 if(write_to_fsi(offsetof(FSINFO, free_cluster_count),
                         &new_free_clusters, 4) == -1)
                 {
-                    printf("allocate_directory: could not set the new free cluster count\n");
+                    LOG("allocate_directory: could not set the new free cluster count\n");
                     return  -1;
                 }
                 
                 if(find_free_fat_entry(&new_free_entry) == -1)
                 {
-                    printf("allocate_directory: could not get a new free entry\n");
+                    LOG("allocate_directory: could not get a new free entry\n");
                     return -1;
                 }
                 
                 if(write_to_fsi(offsetof(FSINFO, first_free_cluster), &new_free_entry, 4) == -1)
                 {
-                    printf("allocate_directory: could not set the new free entry\n");
+                    LOG("allocate_directory: could not set the new free entry\n");
                     return -1;
                 }
                 
@@ -205,7 +206,7 @@ s32 allocate_directory(u32 directory_cluster, Directory *dir)
             
             if(fat_getdatetime(&datetime) == -1)
             {
-                printf("allocate_directory: could not get current datetime\n");
+                LOG("allocate_directory: could not get current datetime\n");
                 return -1;
             }
             
@@ -217,7 +218,7 @@ s32 allocate_directory(u32 directory_cluster, Directory *dir)
             
             if(write_to_cluster(parent_directory_cluster, offset, &temp_dir, sizeof(Directory)) == -1)
             {
-                printf("allocate_directory: could not write to cluster\n");
+                LOG("allocate_directory: could not write to cluster\n");
                 return -1;
             }
            
@@ -250,14 +251,14 @@ s32 allocate_directory(u32 directory_cluster, Directory *dir)
                 if(write_to_cluster(this_directory_cluster, 0, &this_directory, 
                     sizeof(Directory)) == -1)
                 {
-                    printf("allocate_directory: could not create . entry\n");
+                    LOG("allocate_directory: could not create . entry\n");
                     return -1;
                 }
                 
                 if(write_to_cluster(this_directory_cluster, sizeof(Directory), &parent_directory,
                     sizeof(Directory)) == -1)
                 {
-                    printf("allocate_directory: could not create .. entry\n");
+                    LOG("allocate_directory: could not create .. entry\n");
                     return -1;
                 }
            }
@@ -290,14 +291,14 @@ s32 get_directory_entry(u32 *cluster_number, dir_info *di, u32 *offset)
      */
     if((*offset % sizeof(Directory)) != 0)
     {
-        printf("get_directory_entry: offset not aligned\n");
+        LOG("get_directory_entry: offset not aligned\n");
         return -1;
     }
 
 next_cluster:
     if(get_next_entry(*cluster_number, &fe) == -1)
     {
-        printf("get_directory_entry: could not get next fat entry\n");
+        LOG("get_directory_entry: could not get next fat entry\n");
         return -1;
     }
 
@@ -306,7 +307,7 @@ read_cluster:
     {
         if(fe.next_entry == 0x0FFFFFF8)
         {
-            printf("get_directory_entry: reached end of directory\n");
+            LOG("get_directory_entry: reached end of directory\n");
             return -1;
         }
 
@@ -321,7 +322,7 @@ read_cluster:
      */
     if(di->dir.name[0] == 0x00)
     {
-        printf("get_directory_entry: end of directory\n");
+        LOG("get_directory_entry: end of directory\n");
         *offset = 0;
         return -1;
     }
@@ -334,7 +335,7 @@ read_cluster:
         {
             lfn_entries = (lfn.ordinal - 0x40) - 1;
             
-            printf("get_directory_entry: lfn entries: %u\n", lfn_entries);
+            LOG("get_directory_entry: lfn entries: %u\n", lfn_entries);
             is_first_lfn = 0;
         }
         
@@ -357,7 +358,7 @@ read_cluster:
             prettify_83_name(di->dir.name, di->long_name);
     }
     
-    printf("get_directory_entry: final lfn %s\n", di->long_name);
+    LOG("get_directory_entry: final lfn %s\n", di->long_name);
 
     di->cluster32 = (di->dir.first_clus_hi << 16)
         | di->dir.first_clus_low;

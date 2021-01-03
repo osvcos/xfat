@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "datetime.h"
+#include "log.h"
 #include "utils.h"
 #include "xfat.h"
 
@@ -50,19 +51,19 @@ s32 lookup_entry(const char *path, u32 *starting_cluster, dir_info *di)
     memcpy(new_path, path + 1, strlen(path + 1));
     memset(&dinfo, 0, sizeof(dir_info));
     
-    printf("lookup_entry(path=%s)\n", path);
+    LOG("lookup_entry(path=%s)\n", path);
     
     token = strtok_r(new_path, "/", &intbuff);
     
     while(token != NULL)
     {
-        printf("lookup_entry: looking for %s\n", token);
+        LOG("lookup_entry: looking for %s\n", token);
         
         while(get_directory_entry(&current_cluster, &dinfo, &offset) != -1)
         {
             if(strncmp(token, dinfo.long_name, MAX_LFN_LENGTH) == 0)
             {
-                printf("lookup_entry: found %s\n", token);
+                LOG("lookup_entry: found %s\n", token);
                 
                 current_cluster = dinfo.cluster32;
                 offset = 0;
@@ -73,7 +74,7 @@ s32 lookup_entry(const char *path, u32 *starting_cluster, dir_info *di)
             }
         }
         
-        printf("lookup_entry: %s not found\n", token);
+        LOG("lookup_entry: %s not found\n", token);
         ret = -1;
         break;
     }

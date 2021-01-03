@@ -8,6 +8,7 @@
 
 #include "datetime.h"
 #include "directory.h"
+#include "log.h"
 #include "superblock.h"
 #include "xfat.h"
 
@@ -122,14 +123,14 @@ s32 open_device(const char* dev)
     if(fat32_bpb.ext_flags & 0x0080)
     {
         is_mirroring_enabled = 0;
-        printf("open_device: mirroring is disabled\n");
+        LOG("open_device: mirroring is disabled\n");
         fat_in_use = (fat32_bpb.ext_flags & 0x000F);
         printf("open_device: using fat %u\n", fat_in_use);
     }
     else
     {
         is_mirroring_enabled = 1;
-        printf("open_device: mirroring is enabled\n");
+        LOG("open_device: mirroring is enabled\n");
     }
 
     fat_region_offset = (common_bpb.reserved_sectors * bytes_per_sector)
@@ -187,7 +188,7 @@ s32 read_cluster(u32 cluster_number, u64 offset, void *data, u32 size)
      */
     if((fe.data_offset + offset + size) > end_of_cluster)
     {
-        printf("read_cluster: reached end of cluster\n");
+        LOG("read_cluster: reached end of cluster\n");
         return -1;
     }
     
@@ -226,7 +227,7 @@ s32 set_label(const char* label)
     if(write_to_bootsector(sizeof(CBPB) + offsetof(FAT32BPB, volume_label),
         new_label, 11) == -1)
     {
-        printf("set_label: could not write label to bootsector\n");
+        LOG("set_label: could not write label to bootsector\n");
         return -1;
     }
     
@@ -237,7 +238,7 @@ s32 set_label(const char* label)
             if(write_to_cluster(start_cluster,
                 offset - 32, new_label, 11) == -1)
             {
-                printf("set_label: could not write label to directory\n");
+                LOG("set_label: could not write label to directory\n");
                 return -1;
             }
             
@@ -245,7 +246,7 @@ s32 set_label(const char* label)
                 offset + offsetof(Directory, last_mod_time),
                 &current_time, 2) == -1)
             {
-                printf("set_label: could not set last modification time\n");
+                LOG("set_label: could not set last modification time\n");
                 return -1;
             }
             
@@ -253,7 +254,7 @@ s32 set_label(const char* label)
                 offset + offsetof(Directory, last_mod_date),
                 &current_date, 2) == -1)
             {
-                printf("set_label: could not set last modification date\n");
+                LOG("set_label: could not set last modification date\n");
                 return -1;
             }
             
@@ -277,7 +278,7 @@ s32 set_label(const char* label)
 
 s32  write_to_cluster(u32 cluster_number, u64 offset, void *data, u32 size)
 {
-    printf("write_to_cluster(cluster_number=%u, offset=%lu, size=%u)\n", cluster_number,
+    LOG("write_to_cluster(cluster_number=%u, offset=%lu, size=%u)\n", cluster_number,
            offset, size);
     /*
      * TODO: Handle cluster expansion, and a lot more...
@@ -289,7 +290,7 @@ s32  write_to_cluster(u32 cluster_number, u64 offset, void *data, u32 size)
     
     if(get_next_entry(cluster_number, &fe) == -1)
     {
-        printf("write_to_cluster: could not get next entry for cluster %u\n",
+        LOG("write_to_cluster: could not get next entry for cluster %u\n",
                cluster_number);
         return -1;
     }
@@ -298,13 +299,13 @@ s32  write_to_cluster(u32 cluster_number, u64 offset, void *data, u32 size)
     
     if((fe.data_offset + offset + size) > end_of_cluster)
     {
-        printf("write_to_cluster: cannot exceed cluster boundary\n");
+        LOG("write_to_cluster: cannot exceed cluster boundary\n");
         return -1;
     }
     
     if(pwrite(fd, data, size, fe.data_offset + offset) == -1)
     {
-        printf("write_to_cluster: failed to write to cluster\n");
+        LOG("write_to_cluster: failed to write to cluster\n");
         return -1;
     }
     
@@ -325,7 +326,7 @@ s32 write_to_fat_entry(u32 fat_index, u32 new_value)
         
         if(pwrite(fd, &new_value, sizeof(u32), offset) == -1)
         {
-            printf("write_to_fat_entry: error writing to FAT\n");
+            LOG("write_to_fat_entry: error writing to FAT\n");
             return -1;
         }
     }

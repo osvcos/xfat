@@ -4,6 +4,12 @@ XFATLIB_LDFLAGS := -shared
 XFATLIB_OBJS    := xfat.o datetime.o directory.o
 XFATLIB_OUT     := libxfat.so
 
+ifdef DEBUG
+    ifeq ($(DEBUG), 1)
+        XFATLIB_CFLAGS += -DDEBUG
+    endif
+endif
+
 all: $(XFATLIB_OBJS)
 	$(XFATLIB_CC) $(XFATLIB_LDFLAGS) $(XFATLIB_OBJS) -o $(XFATLIB_OUT)
 
