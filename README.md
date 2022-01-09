@@ -34,7 +34,7 @@ For example:
     
 You will need to specify the location of libxfat. To do so, you can use the LD_LIBRARY_PATH environment variable:
 
-    LD_LIBRARY_PATH=/path/to/libxfat.so xfat-fuse /dev/sdd1 /mnt
+    LD_LIBRARY_PATH=/path/to/libxfat/directory xfat-fuse /dev/sdd1 /mnt
 
 ## Miscellaneous programs
 
