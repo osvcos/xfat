@@ -16,7 +16,7 @@ xfat:
 	make -C ../
 
 $(OUTPUT): $(OBJECTS)
-	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 
 %.o : %.c
 	$(CC) $(CFLAGS) -c $<
